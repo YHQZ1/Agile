@@ -1,0 +1,9 @@
+{
+  "liveServer.settings.port": 5501,
+  "workbench.sideBar.location": "left",
+  "files.autoSave": "afterDelay",
+  "editor.cursorStyle": "line",
+  "editor.autoClosingBrackets": "never",
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "workbench.colorTheme": "Default Dark Modern"
+}
