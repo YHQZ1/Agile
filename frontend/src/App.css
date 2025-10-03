@@ -1,0 +1,43 @@
+/* Reuses variables from index.css */
+.app, .app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  background: var(--bg-secondary);
+  padding: var(--section-padding); /* Reuse from index.css */
+  margin-left: var(--sidebar-width); /* Sync with index.css variable */
+}
+
+.loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5rem;
+  color: var(--text-primary); /* Use theme-aware color */
+}
+
+/* ===== Mobile Responsiveness ===== */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: var(--gap-md); /* Use gap variable for padding */
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+}
+
+/* ===== Tablet/Desktop Overrides ===== */
+@media (min-width: 769px) {
+  /* Ensure sidebar spacing consistency */
+  .main-content {
+    padding: calc(var(--section-padding) * 1.5); /* 1.5x base padding */
+  }
+}

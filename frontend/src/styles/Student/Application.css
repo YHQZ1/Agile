@@ -1,0 +1,511 @@
+.registration-container-app {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.back-button-app {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-button-app:hover {
+  color: #4338ca;
+}
+
+.registration-title-app {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.progress-container-app {
+  margin-bottom: 2rem;
+}
+
+.step-indicators-app {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.step-circle-app {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  font-weight: 600;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.step-circle-app.active-app {
+  background-color: #4f46e5;
+  color: white;
+}
+
+.step-circle-app.completed-app {
+  background-color: #10b981;
+  color: white;
+}
+
+.progress-bar-container-app {
+  position: relative;
+  height: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+.progress-bar-background-app {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 0.125rem;
+  width: 100%;
+  transform: translateY(-50%);
+  background-color: #e5e7eb;
+}
+
+.progress-bar-fill-app {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 0.125rem;
+  transform: translateY(-50%);
+  background-color: #4f46e5;
+  transition: width 0.3s ease-in-out;
+}
+
+.step-labels-app {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.step-labels-app span {
+  color: #6b7280;
+  transition: color 0.3s;
+}
+
+.step-labels-app span.active-app {
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.form-section-app {
+  margin-top: 1rem;
+}
+
+.section-title-app {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.form-row-app {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.form-group-app {
+  margin-bottom: 1rem;
+}
+
+.form-group-app label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: #4b5563;
+}
+
+.form-group-app input, .form-group-app select {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  font-size: 0.875rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-group-app input:focus, .form-group-app select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  outline: none;
+}
+
+.file-input-app {
+  padding: 0.25rem 0;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.password-strength-app {
+  margin-top: 0.5rem;
+}
+
+.strength-bar-app {
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.strength-indicator-app {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.strength-none-app {
+  background-color: #e5e7eb;
+}
+
+.strength-weak-app {
+  background-color: #ef4444;
+}
+
+.strength-medium-app {
+  background-color: #f59e0b;
+}
+
+.strength-good-app {
+  background-color: #3b82f6;
+}
+
+.strength-strong-app {
+  background-color: #10b981;
+}
+
+.strength-text-app {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.password-mismatch-app {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #ef4444;
+}
+
+.button-group-app {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
+
+.btn-app {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btn-prev-app {
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.btn-prev-app:hover {
+  background-color: #f9fafb;
+}
+
+.btn-next-app {
+  background-color: #4f46e5;
+  color: white;
+  border: 1px solid transparent;
+}
+
+.btn-next-app:hover {
+  background-color: #4338ca;
+}
+
+.btn-submit-app {
+  background-color: #10b981;
+  color: white;
+  border: 1px solid transparent;
+}
+
+.btn-submit-app:hover {
+  background-color: #059669;
+}
+
+.btn-submit-app:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.error-app {
+  border-color: #ef4444 !important;
+}
+
+.error-message-app {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.success-message-app {
+  text-align: center;
+  padding: 2rem;
+  background-color: #f0fdf4;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}
+
+.success-message-app p {
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+/* Dark theme styles */
+.registration-container-app.dark-theme-app {
+  background-color: #1a1a1a;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+}
+
+.registration-container-app.dark-theme-app .registration-title-app {
+  color: #f3f4f6;
+}
+
+.registration-container-app.dark-theme-app .back-button-app {
+  color: #818cf8;
+}
+
+.registration-container-app.dark-theme-app .back-button-app:hover {
+  color: #a5b4fc;
+}
+
+.registration-container-app.dark-theme-app .step-circle-app {
+  background-color: #333;
+  color: #9ca3af;
+}
+
+.registration-container-app.dark-theme-app .step-circle-app.active-app {
+  background-color: #6366f1;
+  color: white;
+}
+
+.registration-container-app.dark-theme-app .step-circle-app.completed-app {
+  background-color: #059669;
+  color: white;
+}
+
+.registration-container-app.dark-theme-app .progress-bar-background-app {
+  background-color: #333;
+}
+
+.registration-container-app.dark-theme-app .progress-bar-fill-app {
+  background-color: #6366f1;
+}
+
+.registration-container-app.dark-theme-app .step-labels-app span {
+  color: #9ca3af;
+}
+
+.registration-container-app.dark-theme-app .step-labels-app span.active-app {
+  color: #818cf8;
+}
+
+.registration-container-app.dark-theme-app .section-title-app {
+  color: #f3f4f6;
+}
+
+.registration-container-app.dark-theme-app .form-group-app label {
+  color: #d1d5db;
+}
+
+.registration-container-app.dark-theme-app .form-group-app input, 
+.registration-container-app.dark-theme-app .form-group-app select {
+  background-color: #2d2d2d;
+  border-color: #444;
+  color: #e5e7eb;
+}
+
+.registration-container-app.dark-theme-app .form-group-app input:focus, 
+.registration-container-app.dark-theme-app .form-group-app select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+.registration-container-app.dark-theme-app .strength-text-app {
+  color: #9ca3af;
+}
+
+.registration-container-app.dark-theme-app .btn-prev-app {
+  background-color: #2d2d2d;
+  color: #e5e7eb;
+  border-color: #444;
+}
+
+.registration-container-app.dark-theme-app .btn-prev-app:hover {
+  background-color: #333;
+}
+
+.registration-container-app.dark-theme-app .btn-next-app {
+  background-color: #6366f1;
+}
+
+.registration-container-app.dark-theme-app .btn-next-app:hover {
+  background-color: #4f46e5;
+}
+
+.registration-container-app.dark-theme-app .btn-submit-app {
+  background-color: #059669;
+}
+
+.registration-container-app.dark-theme-app .btn-submit-app:hover {
+  background-color: #047857;
+}
+
+.registration-container-app.dark-theme-app .error-app {
+  border-color: #f87171 !important;
+}
+
+.registration-container-app.dark-theme-app .error-message-app {
+  color: #f87171;
+}
+
+.registration-container-app.dark-theme-app .success-message-app {
+  background-color: #1a2e22;
+}
+
+.registration-container-app.dark-theme-app .success-message-app p {
+  color: #e5e7eb;
+}
+
+.registration-container-app.dark-theme-app .strength-bar-app {
+  background-color: #333;
+}
+
+.registration-container-app.dark-theme-app .strength-none-app {
+  background-color: #333;
+}
+
+.registration-container-app * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Enhanced Mobile Responsiveness */
+@media (max-width: 768px) {
+  .form-row-app {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .button-group-app {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .btn-app {
+    width: 100%;
+    padding: 0.625rem 1rem;
+  }
+  
+  .registration-container-app {
+    padding: 1.25rem;
+    margin: 0 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  .step-labels-app {
+    font-size: 0.7rem;
+  }
+  
+  .step-circle-app {
+    height: 1.75rem;
+    width: 1.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Small Mobile Devices */
+@media (max-width: 480px) {
+  .registration-title-app {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  
+  .section-title-app {
+    font-size: 1.125rem;
+  }
+  
+  .step-labels-app span {
+    font-size: 0.65rem;
+  }
+  
+  .step-circle-app {
+    height: 1.5rem;
+    width: 1.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .registration-container-app {
+    padding: 1rem;
+  }
+  
+  .form-group-app label {
+    font-size: 0.8125rem;
+  }
+  
+  .form-group-app input, 
+  .form-group-app select {
+    padding: 0.4375rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Fix for iPhone 5/SE and other very small screens */
+@media (max-width: 360px) {
+  .step-labels-app {
+    font-size: 0.6rem;
+  }
+  
+  .step-circle-app {
+    height: 1.25rem;
+    width: 1.25rem;
+    font-size: 0.7rem;
+  }
+  
+  .progress-container-app {
+    margin-bottom: 1.5rem;
+  }
+  
+  .registration-container-app {
+    padding: 0.875rem;
+  }
+}

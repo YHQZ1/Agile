@@ -1,0 +1,760 @@
+@keyframes fadeIn {
+  from {
+      opacity: 0;
+      transform: translateY(10px);
+ }
+  to {
+      opacity: 1;
+      transform: translateY(0);
+ }
+}
+.page-container {
+  animation: none;
+}
+.tech-directory {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+.header-section {
+  margin: 0px;
+}
+.header {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 0;
+  color: var(--text-primary);
+  position: relative;
+  display: inline-block;
+}
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin-bottom: 0px;
+}
+.filter-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+.category-button {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+.category-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-color);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+.category-button span {
+  position: relative;
+  z-index: 1;
+}
+.category-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+.category-button.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 6px 15px rgba(67, 97, 238, 0.3);
+}
+.category-button.active::before {
+  opacity: 0;
+}
+.category-button:hover:not(.active)::before {
+  opacity: 0.1;
+}
+.search-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.search-box {
+  flex: 1;
+  min-width: 300px;
+  max-width: 650px;
+  display: flex;
+  position: relative;
+}
+.search-input {
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  padding-right: 3rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+.search-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  width: 36px;
+  border-radius: 50%;
+}
+.search-button:hover {
+  color: var(--primary-color);
+  background: rgba(67, 97, 238, 0.1);
+}
+.sort-view-options {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+.sort-options {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.sort-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-right: 0.25rem;
+}
+.sort-button {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.sort-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+.sort-button.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+.view-options {
+  display: flex;
+  gap: 0.5rem;
+}
+.view-button {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.view-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+.view-button.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+.results-summary {
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  background: rgba(67, 97, 238, 0.05);
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--primary-color);
+}
+.companies-container {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+.companies-container.grid {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+.companies-container.list {
+  grid-template-columns: 1fr;
+}
+.company-card {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  cursor: pointer;
+}
+.companies-container.list .company-card {
+  flex-direction: row;
+  align-items: center;
+  padding: 1.5rem;
+}
+.company-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  border-color: rgba(67, 97, 238, 0.2);
+}
+.company-card::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(67, 97, 238, 0.03) 0%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.company-card:hover::before {
+  opacity: 1;
+}
+.company-logo {
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  margin: 10px;
+}
+.companies-container.list .company-logo {
+  padding: 1rem;
+  margin-right: 1.5rem;
+  border-radius: 0px;
+  width: 80px;
+  height: 100px;
+  flex-shrink: 0;
+}
+.company-card:hover .company-logo {
+  transform: scale(1.05);
+}
+.company-logo img {
+  max-width: 80px;
+  max-height: 80px;
+  transition: transform 0.3s ease;
+}
+.company-card:hover .company-logo img {
+  transform: scale(1.05);
+}
+.company-info {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.companies-container.list .company-info {
+  padding: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 2rem;
+}
+.company-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  position: relative;
+  display: inline-block;
+}
+.companies-container.list .company-name {
+  margin-right: auto;
+}
+.company-name::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--primary-color);
+  border-radius: 1px;
+  transition: width 0.3s ease;
+  opacity: 0.7;
+}
+.company-card:hover .company-name::after {
+  width: 50px;
+  opacity: 1;
+}
+.companies-container.list .company-name::after {
+  display: none;
+}
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary-color);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
+}
+.companies-container.list .category-badge {
+  margin-bottom: 0;
+}
+.company-card:hover .category-badge {
+  background: rgba(67, 97, 238, 0.2);
+  transform: translateY(-2px);
+}
+.company-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.company-actions {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+.companies-container.list .company-actions {
+  padding: 0;
+  margin-left: auto;
+}
+.company-actions .view-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.5 0.5;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.company-actions .view-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.company-actions .view-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+}
+.company-actions .view-button:hover::after {
+  opacity: 1;
+}
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  gap: 1.5rem;
+}
+.no-results svg {
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+.no-results p {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+.reset-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.85rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+}
+.reset-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.reset-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+}
+.reset-button:hover::after {
+  opacity: 1;
+}
+/* Enhanced mobile responsiveness for tech directory */
+
+/* Make filter categories horizontally scrollable on mobile */
+.filter-categories {
+  display: flex;
+  flex-wrap: nowrap; /* Prevent wrapping */
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  padding-bottom: 0.5rem; /* Add some padding for scrollbar */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: thin; /* Thin scrollbar for Firefox */
+}
+
+/* Style the scrollbar for webkit browsers */
+.filter-categories::-webkit-scrollbar {
+  height: 4px;
+}
+
+.filter-categories::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.filter-categories::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 10px;
+}
+
+/* Make category buttons not shrink */
+.category-button {
+  flex-shrink: 0; /* Prevent button from shrinking */
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+/* Improved responsive layouts */
+@media (max-width: 1024px) {
+  .tech-directory {
+    padding: 1.5rem;
+  }
+  
+  .companies-container.grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .tech-directory {
+    padding: 1rem;
+  }
+  
+  .search-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .search-box {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .sort-view-options {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  /* Improve list view in mobile */
+  .companies-container.list .company-card {
+    flex-direction: row; /* Keep as row to maintain better layout */
+    padding: 1rem;
+    align-items: center;
+  }
+  
+  .companies-container.list .company-logo {
+    width: 60px;
+    height: 60px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+  }
+  
+  .companies-container.list .company-info {
+    padding: 0;
+    flex: 1;
+  }
+  
+  .companies-container.list .company-name {
+    font-size: 1.1rem;
+  }
+  
+  .companies-container.list .company-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .companies-container.list .company-actions {
+    padding: 0;
+    margin-left: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    font-size: 1.5rem;
+  }
+  
+  .subtitle {
+    font-size: 0.95rem;
+  }
+  
+  /* Refine category buttons */
+  .category-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  /* Improve sort options layout */
+  .sort-view-options {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .sort-options {
+    order: 2;
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  
+  .sort-button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .view-options {
+    order: 1;
+    margin-left: auto;
+  }
+  
+  /* Further refine company cards */
+  .companies-container.grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .company-logo img {
+    max-width: 60px;
+    max-height: 60px;
+  }
+  
+  .company-name {
+    font-size: 1.15rem;
+  }
+  
+  /* Adjust list view specifically for very small screens */
+  .companies-container.list .company-card {
+    flex-wrap: wrap;
+  }
+  
+  .companies-container.list .company-logo {
+    margin-bottom: 0.75rem;
+  }
+  
+  .companies-container.list .company-actions {
+    margin-top: 0.75rem;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  /* Make sure the search input is more usable */
+  .search-input {
+    padding: 0.75rem 1rem;
+    padding-right: 3rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 360px) {
+  .tech-directory {
+    padding: 0.75rem;
+  }
+  
+  .header-section {
+    margin-bottom: 1rem;
+  }
+  
+  .results-summary {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Fix for company actions and view details button */
+.company-actions {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.companies-container.list .company-actions {
+  padding: 0;
+  margin-left: auto;
+}
+
+/* Improve view details button styling */
+.company-actions .custom-button,
+.company-actions .details-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  min-width: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.company-actions .custom-button:hover,
+.company-actions .details-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+}
+
+/* Media query adjustments for better responsiveness */
+@media (max-width: 768px) {
+  .companies-container.list .company-card {
+    flex-wrap: nowrap; /* Prevent wrapping in normal list view */
+    gap: 1rem;
+  }
+  
+  .companies-container.list .company-info {
+    flex: 1;
+    min-width: 0; /* Allow text to truncate */
+  }
+  
+  .companies-container.list .company-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .companies-container.list .company-actions {
+    flex-shrink: 0; /* Prevent button from shrinking */
+  }
+  
+  .company-actions .custom-button,
+  .company-actions .details-button {
+    padding: 0.5rem 0.8rem;
+    min-width: 90px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* For very small screens, adjust the list view layout */
+  .companies-container.list .company-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "logo info"
+      "actions actions";
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .companies-container.list .company-logo {
+    grid-area: logo;
+    margin: 0;
+    width: 50px;
+    height: 50px;
+  }
+  
+  .companies-container.list .company-info {
+    grid-area: info;
+    padding: 0;
+  }
+  
+  .companies-container.list .company-actions {
+    grid-area: actions;
+    width: 100%;
+    margin: 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .company-actions .custom-button,
+  .company-actions .details-button {
+    width: 100%; /* Full width button on very small screens */
+    justify-content: center;
+  }
+  
+  /* Improve grid view responsiveness */
+  .companies-container.grid .company-actions {
+    padding: 0 1rem 1rem;
+  }
+  
+  .companies-container.grid .company-actions .custom-button,
+  .companies-container.grid .company-actions .details-button {
+    width: 100%;
+  }
+}

@@ -1,0 +1,317 @@
+:root {
+  --sidebar-width: 260px;
+  --sidebar-mobile-width: 280px;
+  --transition-speed: 0.3s;
+}
+
+/* Mobile toggle button */
+.mobile-toggle {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 99;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+}
+
+.mobile-toggle.dark {
+  background: var(--bg-primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-toggle .icon {
+  font-size: 1.2rem;
+  color: var(--primary-color);
+}
+
+/* Overlay for when mobile sidebar is open */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 98;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Sidebar styles */
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  background: var(--bg-primary);
+  color: var(--primary-color);
+  border-right: 1px solid var(--border-color);
+  z-index: 100;
+  direction: ltr;
+  transition: transform var(--transition-speed) ease, width var(--transition-speed) ease;
+  overflow-x: hidden;
+  overflow-y: auto; /* Allow vertical scrolling */
+}
+
+.sidebar-header {
+  padding: 0 0.5rem 1.25rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  letter-spacing: -0.5px;
+  cursor: pointer;
+}
+
+.logo-icon {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  display: flex;
+  justify-content: center;
+}
+
+.close-sidebar {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-container {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  min-height: none;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+
+.main-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 0.5rem; /* Ensure some spacing for small screens */
+  /* Ensure main menu doesn't push theme toggle off screen */
+  max-height: calc(100vh - 150px);
+}
+
+.main-menu ul {
+  list-style: none;
+  padding: 0.5rem 0;
+  margin: 0;
+}
+
+.main-menu li a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin: 0.15rem 0;
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.main-menu li a:hover {
+  background: var(--primary-light);
+  margin-right: 12px;
+}
+
+.main-menu li a.active {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 500;
+  margin-right: 12px;
+}
+
+.main-menu li a.active .icon {
+  color: white;
+}
+
+.icon {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  min-width: 24px;
+}
+
+.menu-text {
+  transition: opacity var(--transition-speed) ease;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 1rem 0;
+  opacity: 0.5;
+}
+
+.theme-toggle-container {
+  position: sticky;
+  bottom: 0;
+  padding-top: 0.5rem;
+  background: var(--bg-primary); /* Match sidebar background */
+  margin-top: auto; /* Push to bottom */
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.theme-toggle:hover {
+  background: var(--primary-light);
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 2px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+.sidebar.dark::-webkit-scrollbar-thumb {
+  background-color: #555;
+  cursor: pointer;
+}
+
+.sidebar.dark::-webkit-scrollbar-thumb:hover {
+  background-color: #777;
+  cursor: pointer;
+}
+
+.sidebar.dark {
+  scrollbar-color: #555 transparent;
+}
+
+/* Mobile specific styles */
+.sidebar.mobile {
+  width: var(--sidebar-mobile-width);
+  transform: translateX(-100%);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar.mobile.open {
+  transform: translateX(0);
+}
+
+/* Keep full menu text for mobile sliding sidebar */
+.sidebar.mobile .menu-text {
+  display: inline;
+}
+
+/* Ensure menu items have proper spacing on mobile */
+.sidebar.mobile .main-menu li a {
+  justify-content: flex-start;
+  padding: 0.75rem 1rem;
+}
+
+.sidebar.mobile .main-menu li a:hover,
+.sidebar.mobile .main-menu li a.active {
+  margin-right: 0;
+}
+
+.sidebar.mobile .theme-toggle {
+  justify-content: flex-start;
+  padding: 0.75rem 1rem;
+}
+
+.sidebar.mobile .theme-toggle span {
+  display: inline;
+}
+
+/* For very small heights like landscape mobile */
+@media screen and (max-height: 600px) {
+  .sidebar {
+    overflow-y: auto;
+  }
+  
+  .main-menu {
+    max-height: none;
+  }
+}
+
+/* Ensure the layout works properly when the sidebar isn't taking up space */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+@media screen and (min-width: 769px) {
+  main {
+    transition: margin-left var(--transition-speed) ease;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  main {
+    margin-left: 0;
+    transition: margin-left var(--transition-speed) ease;
+  }
+
+  .theme-toggle-container {
+    padding-bottom: 80px; /* Add more space at bottom on mobile */
+  }
+}

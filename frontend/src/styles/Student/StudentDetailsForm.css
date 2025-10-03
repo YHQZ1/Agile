@@ -1,0 +1,362 @@
+/* StudentDetailsForm.css */
+/* Base Container Styles */
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-secondary, #f5f5f5);
+  color: var(--text-primary, #333);
+  transition: all 0.3s ease;
+  width: 100%;
+  overflow-x: hidden;
+  padding-bottom: 2rem;
+}
+
+/* Dark Theme Override */
+.profile-container.dark-theme {
+  background-color: var(--bg-dark, #121212);
+  color: var(--text-dark, #f0f0f0);
+}
+
+/* Mobile header - now used for all screen sizes */
+.mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--primary-color, #3f51b5);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.menu-toggle-btn {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius, 4px);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menu-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Progress bar styles - now used for all screen sizes */
+.mobile-progress-container {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  position: relative;
+}
+
+.mobile-progress-bar {
+  height: 100%;
+  background-color: var(--primary-color, #3f51b5);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+  color: var(--text-secondary, #666);
+}
+
+/* Navigation Menu - Now drawer style for all screen sizes */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 80%;
+  max-width: 300px;
+  height: 100vh;
+  background-color: var(--bg-primary, #fff);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 30;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+
+.sidebar.hidden {
+  transform: translateX(-100%);
+}
+
+.sidebar-header {
+  padding: 1rem;
+  color: var(--primary-color);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+}
+
+.sidebar-item {
+  padding: 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  color: var(--text-primary, #333);
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.sidebar-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-item.active {
+  background-color: var(--primary-light, #e8eaf6);
+  color: var(--primary-color, #3f51b5);
+  font-weight: 600;
+}
+
+/* Form Section Styles */
+.form-section {
+  padding: 1rem;
+  max-width: 700px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.form-section h2 {
+  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+  font-size: 1.5rem;
+  color: var(--primary-color, #3f51b5);
+}
+
+/* Hidden content when menu is open */
+form.hidden {
+  display: none;
+}
+
+/* Input Group Styles */
+.input-group {
+  margin-bottom: 1.2rem;
+  width: 100%;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: var(--border-radius, 4px);
+  font-size: 1rem;
+  background-color: var(--bg-input, #fff);
+  color: var(--text-primary, #333);
+}
+
+.input-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Repeatable Item Styles */
+.repeatable-item {
+  border: 1px solid var(--border-color, #ddd);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--border-radius, 4px);
+  background-color: var(--bg-card, #fff);
+}
+
+.repeatable-item h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary, #333);
+  margin-bottom: 1rem;
+}
+
+/* Button Styles */
+.add-button,
+.remove-button,
+.navigation-buttons button,
+.skip-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius, 4px);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.add-button {
+  background-color: var(--success-color, #4caf50);
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.add-button:hover {
+  background-color: var(--success-dark, #388e3c);
+}
+
+.remove-button {
+  background-color: var(--error-color, #f44336);
+  color: white;
+  margin-top: 0.5rem;
+}
+
+.remove-button:hover {
+  background-color: var(--error-dark, #d32f2f);
+}
+
+/* Profile Picture Preview Styles */
+.profile-picture-preview {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.profile-picture-preview img {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 50%;
+  border: 3px solid var(--primary-color, #3f51b5);
+  object-fit: cover;
+}
+
+.profile-picture-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Navigation Buttons */
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  max-width: 700px;
+  margin: 1rem auto;
+  padding: 0 1rem;
+}
+
+.navigation-buttons button {
+  background-color: var(--primary-color, #3f51b5);
+  color: white;
+  min-width: 100px;
+}
+
+.navigation-buttons button:hover {
+  background-color: var(--primary-dark, #303f9f);
+}
+
+/* File Upload Styles */
+/* File Upload Styles */
+.file-upload-label {
+  display: block;
+  cursor: pointer;
+}
+
+.file-upload-input {
+  display: none;
+}
+
+.file-upload-button {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color, #3f51b5);
+  color: white;
+  border-radius: var(--border-radius, 4px);
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.file-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  margin-top: 0.5rem;
+}
+
+.file-info-display {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.file-size {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+}
+
+/* Skip Section */
+.skip-section {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, #ddd);
+  text-align: center;
+}
+
+.skip-section p {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+}
+
+.skip-button {
+  background-color: var(--warning-color, #ff9800);
+  color: white;
+}
+
+.skip-button:hover {
+  background-color: var(--warning-dark, #f57c00);
+}
+
+/* Dark Theme Overrides */
+.dark-theme .input-group input,
+.dark-theme .input-group select,
+.dark-theme .input-group textarea {
+  background-color: var(--bg-input-dark, #333);
+  color: var(--text-dark, #f0f0f0);
+  border-color: var(--border-color-dark, #555);
+}
+
+.dark-theme .repeatable-item {
+  background-color: var(--bg-card-dark, #242424);
+  border-color: var(--border-color-dark, #555);
+}
+
+.dark-theme .repeatable-item h3 {
+  color: var(--text-dark, #f0f0f0);
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .form-section {
+    padding: 1.5rem;
+  }
+  
+  .mobile-header h2 {
+    font-size: 1.4rem;
+  }
+}

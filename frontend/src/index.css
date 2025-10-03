@@ -1,0 +1,128 @@
+:root {
+  /* ===== Color Palette ===== */
+  --primary-color: #4361ee;
+  --primary-light: rgba(67, 97, 238, 0.1);
+  --text-primary: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --border-color: rgba(0, 0, 0, 0.1);
+
+  /* ===== Layout & Spacing ===== */
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 70px;
+  --transition-speed: 0.3s;
+  --border-radius: 8px;
+  --gap-sm: 0.5rem;
+  --gap-md: 1rem;
+  --section-padding: 1rem;
+}
+
+[data-theme="dark"] {
+  /* Dark Mode Overrides */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #ecf0f1;
+  --text-secondary: #bdc3c7;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --primary-light: rgba(67, 97, 238, 0.2);
+}
+
+/* ===== Base Reset & Global Styles ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transition: 
+    background-color 0.3s ease, 
+    color 0.3s ease, 
+    border-color 0.3s ease;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ===== Utility Classes ===== */
+.flex {
+  display: flex;
+  gap: var(--gap-sm);
+}
+
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.rounded { border-radius: var(--border-radius); }
+
+/* Gap Utilities */
+.gap-1 { gap: var(--gap-sm); }
+.gap-2 { gap: var(--gap-md); }
+
+/* ===== Layout Container ===== */
+.app-container {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* ===== Main Content ===== */
+
+.main-content {
+  width: calc(100% - var(--sidebar-width));
+  position: fixed;
+  left: var(--sidebar-width);
+  top: 0;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: overlay;
+  overscroll-behavior-y: contain;
+  padding: 2.5rem;
+  box-sizing: border-box;
+  background: var(--bg-secondary);
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) transparent;
+  animation: fadeIn 0.3s ease-out;
+}
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+.main-content::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 4px;
+}
+
+/* Apply when sidebar is collapsed */
+.sidebar-collapsed .main-content {
+  margin-left: var(--sidebar-collapsed-width);
+  width: calc(100% - var(--sidebar-collapsed-width));
+}
+
+/* ===== Responsive Breakpoints ===== */
+@media (max-width: 768px) {
+  .main-content {
+    /* margin-left: var(--sidebar-collapsed-width); */
+    width: 100%;
+    padding: var(--section-padding);
+    margin-top: 40px;
+    width: 100%;
+    left: 0;
+    padding: 1.75rem;
+  }
+
+  
+  /* For when sidebar is expanded on mobile */
+  .sidebar-expanded .main-content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
+}
+
+/* Optional: Print Styles */
+@media print {
+  body { background: white; }
+  .main-content { width: 100%; margin-left: 0; }
+  .sidebar { display: none; }
+}
