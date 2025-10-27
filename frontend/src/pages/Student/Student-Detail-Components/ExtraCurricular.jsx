@@ -11,12 +11,6 @@ const ExtraCurricular = ({ extraCurricular, handleInputChange, addItem, removeIt
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -24,30 +18,39 @@ const ExtraCurricular = ({ extraCurricular, handleInputChange, addItem, removeIt
     setSuccess(null);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/extra-curricular-form`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('token')}`
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          extracurricular: extraCurricular.map(activity => ({
-            activity_name: activity.activity,
-            role: activity.role,
-            organization: activity.organization,
-            duration: activity.duration
-          }))
+      const results = await Promise.all(
+        extraCurricular.map(async (activity) => {
+          const payload = {
+            activity_name: activity.activity || null,
+            role: activity.role || null,
+            organization: activity.organization || null,
+            duration: activity.duration || null
+          };
+
+          if (!payload.activity_name && !payload.role && !payload.organization && !payload.duration) {
+            throw new Error('Provide at least one field for each activity.');
+          }
+
+          const response = await fetch(`${BASE_URL}/api/extra-curricular-form`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+          });
+
+          const responseData = await response.json();
+
+          if (!response.ok) {
+            throw new Error(responseData.error || 'Failed to save extracurricular activity');
+          }
+
+          return responseData;
         })
-      });
+      );
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to save extracurricular activities');
-      }
-
-      setSuccess('Extracurricular activities saved successfully');
+      setSuccess(`${results.length} activit${results.length > 1 ? 'ies' : 'y'} saved successfully`);
       if (onSave) {
         onSave();
       }

@@ -13,12 +13,6 @@ const Volunteering = ({ volunteering, handleInputChange, addItem, removeItem, on
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -30,14 +24,14 @@ const Volunteering = ({ volunteering, handleInputChange, addItem, removeItem, on
       const validationErrors = volunteering.map((volunteer, index) => {
         const errors = [];
         if (!volunteer.location) errors.push(`Record ${index + 1}: Location is required`);
-        if (!volunteer.company_sector) errors.push(`Record ${index + 1}: Sector is required`);
+        if (!volunteer.sector) errors.push(`Record ${index + 1}: Sector is required`);
         if (!volunteer.task) errors.push(`Record ${index + 1}: Task is required`);
-        if (!volunteer.start_date) errors.push(`Record ${index + 1}: Start date is required`);
-        if (!volunteer.end_date) errors.push(`Record ${index + 1}: End date is required`);
+        if (!volunteer.startDate) errors.push(`Record ${index + 1}: Start date is required`);
+        if (!volunteer.endDate) errors.push(`Record ${index + 1}: End date is required`);
         
         // Date validation
-        if (volunteer.start_date && volunteer.end_date) {
-          if (new Date(volunteer.start_date) >= new Date(volunteer.end_date)) {
+        if (volunteer.startDate && volunteer.endDate) {
+          if (new Date(volunteer.startDate) >= new Date(volunteer.endDate)) {
             errors.push(`Record ${index + 1}: End date must be after start date`);
           }
         }
@@ -54,16 +48,15 @@ const Volunteering = ({ volunteering, handleInputChange, addItem, removeItem, on
           const response = await fetch(`${BASE_URL}/api/volunteer-details-form`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${getCookie('token')}`
+              'Content-Type': 'application/json'
             },
             credentials: 'include',
             body: JSON.stringify({
               location: volunteer.location,
-              company_sector: volunteer.company_sector,
+              company_sector: volunteer.sector,
               task: volunteer.task,
-              start_date: volunteer.start_date,
-              end_date: volunteer.end_date
+              start_date: volunteer.startDate,
+              end_date: volunteer.endDate
             })
           });
 
@@ -110,7 +103,7 @@ const Volunteering = ({ volunteering, handleInputChange, addItem, removeItem, on
               <input
                 type="text"
                 value={volunteer.location || ''}
-                onChange={(e) => handleInputChange('volunteering', 'location', e.target.value, index)}
+                  onChange={(e) => handleInputChange('volunteering', 'location', e.target.value, index)}
                 required
               />
             </div>
@@ -118,8 +111,8 @@ const Volunteering = ({ volunteering, handleInputChange, addItem, removeItem, on
             <div className="input-group">
               <label>Company Sector:</label>
               <select
-                value={volunteer.company_sector || ''}
-                onChange={(e) => handleInputChange('volunteering', 'company_sector', e.target.value, index)}
+                  value={volunteer.sector || ''}
+                  onChange={(e) => handleInputChange('volunteering', 'sector', e.target.value, index)}
                 required
               >
                 <option value="">Select sector</option>
@@ -142,8 +135,8 @@ const Volunteering = ({ volunteering, handleInputChange, addItem, removeItem, on
               <label>Start Date:</label>
               <input
                 type="date"
-                value={volunteer.start_date || ''}
-                onChange={(e) => handleInputChange('volunteering', 'start_date', e.target.value, index)}
+                value={volunteer.startDate || ''}
+                onChange={(e) => handleInputChange('volunteering', 'startDate', e.target.value, index)}
                 required
               />
             </div>
@@ -152,10 +145,10 @@ const Volunteering = ({ volunteering, handleInputChange, addItem, removeItem, on
               <label>End Date:</label>
               <input
                 type="date"
-                value={volunteer.end_date || ''}
-                onChange={(e) => handleInputChange('volunteering', 'end_date', e.target.value, index)}
+                value={volunteer.endDate || ''}
+                onChange={(e) => handleInputChange('volunteering', 'endDate', e.target.value, index)}
                 required
-                min={volunteer.start_date || ''}
+                min={volunteer.startDate || ''}
               />
             </div>
 

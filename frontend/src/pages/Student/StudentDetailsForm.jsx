@@ -221,6 +221,7 @@ const StudentDetailsForm = ({ onFormSubmit }) => {
             handleInputChange={handleInputChange}
             addItem={addItem}
             removeItem={removeItem}
+            onSave={() => handleSectionSave('internships')}
           />
         )}
 
@@ -230,6 +231,7 @@ const StudentDetailsForm = ({ onFormSubmit }) => {
             handleInputChange={handleInputChange}
             addItem={addItem}
             removeItem={removeItem}
+            onSave={() => handleSectionSave('volunteering')}
           />
         )}
 
@@ -239,6 +241,7 @@ const StudentDetailsForm = ({ onFormSubmit }) => {
             handleInputChange={handleInputChange}
             addItem={addItem}
             removeItem={removeItem}
+            onSave={() => handleSectionSave('skills')}
           />
         )}
 
@@ -248,6 +251,7 @@ const StudentDetailsForm = ({ onFormSubmit }) => {
             handleInputChange={handleInputChange}
             addItem={addItem}
             removeItem={removeItem}
+            onSave={() => handleSectionSave('projects')}
           />
         )}
 
@@ -257,6 +261,7 @@ const StudentDetailsForm = ({ onFormSubmit }) => {
             handleInputChange={handleInputChange}
             addItem={addItem}
             removeItem={removeItem}
+            onSave={() => handleSectionSave('accomplishments')}
           />
         )}
 
@@ -266,6 +271,7 @@ const StudentDetailsForm = ({ onFormSubmit }) => {
             handleInputChange={handleInputChange}
             addItem={addItem}
             removeItem={removeItem}
+            onSave={() => handleSectionSave('extraCurricular')}
           />
         )}
 
@@ -275,6 +281,7 @@ const StudentDetailsForm = ({ onFormSubmit }) => {
             handleInputChange={handleInputChange}
             addItem={addItem}
             removeItem={removeItem}
+            onSave={() => handleSectionSave('competitions')}
           />
         )}
 

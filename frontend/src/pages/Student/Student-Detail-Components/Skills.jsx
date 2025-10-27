@@ -7,12 +7,6 @@ const Skills = ({ skills, handleInputChange, addItem, removeItem, onSave }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -20,28 +14,35 @@ const Skills = ({ skills, handleInputChange, addItem, removeItem, onSave }) => {
     setSuccess(null);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/skills-form`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('token')}`
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          skills: skills.map(skill => ({
-            name: skill.name,
-            proficiency: skill.proficiency
-          }))
+      const results = await Promise.all(
+        skills.map(async (skill) => {
+          if (!skill.name) {
+            throw new Error('Skill name is required');
+          }
+
+          const response = await fetch(`${BASE_URL}/api/skills-form`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              skill_name: skill.name,
+              skill_proficiency: skill.proficiency || null
+            })
+          });
+
+          const responseData = await response.json();
+
+          if (!response.ok) {
+            throw new Error(responseData.error || 'Failed to save skill');
+          }
+
+          return responseData;
         })
-      });
+      );
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to save skills');
-      }
-
-      setSuccess('Skills saved successfully');
+      setSuccess(`${results.length} skill${results.length > 1 ? 's' : ''} saved successfully`);
       if (onSave) {
         onSave();
       }
@@ -80,10 +81,10 @@ const Skills = ({ skills, handleInputChange, addItem, removeItem, onSave }) => {
                 required
               >
                 <option value="">Select proficiency level</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-                <option value="expert">Expert</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+                <option value="Expert">Expert</option>
               </select>
             </div>
             {skills.length > 1 && (

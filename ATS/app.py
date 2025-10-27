@@ -1,4 +1,11 @@
 import streamlit as st
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv(dotenv_path=".env")
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+groq_api_key = os.getenv("GROQ_API_KEY")
 
 # Configure the Streamlit page settings
 st.set_page_config(
@@ -338,7 +345,7 @@ st.markdown("""
         font-size: 1.75rem;
         font-weight: 700;
         margin: 1rem 0 0.5rem 0;
-        color: var(--neutral-900);
+        color: #1e3a8a;
     }
     
     .score-description {
@@ -458,6 +465,30 @@ st.markdown("""
         line-height: 1.6;
         color: #000000;
     }
+
+    .ai-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, #1e3a8a 0%, #4338ca 100%);
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--radius-full);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    .ai-badge svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+    }
+
+    .ai-recommendation {
+        background: rgba(79, 70, 229, 0.08);
+        border-left-color: #1e3a8a;
+    }
     
     .recommendation-item strong {
         color: var(--primary-600);
@@ -509,6 +540,7 @@ st.markdown("""
 
 import re
 from collections import Counter
+from typing import List, Optional, Tuple
 
 import PyPDF2 as pdf
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -517,6 +549,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
+try:
+    import requests
+except ImportError:  # pragma: no cover
+    requests = None
 
 
 SKILL_CATEGORIES = {
@@ -569,6 +605,22 @@ def ensure_nltk_resources():
 
 NLTK_DATA = ensure_nltk_resources()
 STOP_WORDS = NLTK_DATA['stop_words']
+
+# Sidebar controls for optional AI assistance
+st.sidebar.markdown("### 🔧 Advanced Options")
+use_ai_coach = st.sidebar.toggle("Enhance recommendations with AI", value=False)
+gemini_api_key = st.sidebar.text_input(
+    "Gemini API Key",
+    type="password",
+    help="Stored only in your session. Used to call Google Gemini for AI guidance.",
+)
+groq_api_key = st.sidebar.text_input(
+    "Groq API Key (optional)",
+    type="password",
+    help="Provide to fall back on Groq's LLaMA models if Gemini is unavailable.",
+)
+if use_ai_coach and not (gemini_api_key or groq_api_key):
+    st.sidebar.info("Add a Gemini or Groq API key to enable AI assistance.")
 
 @st.cache_data
 def extract_skills_and_keywords(text):
@@ -817,6 +869,258 @@ def analyze_achievements(text):
          'increased', 'decreased', 'reduced', 'saved', 'delivered', 'led', 'managed'])]
     return achievements
 
+
+def _truncate_for_ai(text: str, limit: int = 6000) -> str:
+    if len(text) <= limit:
+        return text
+    trimmed = text[:limit].rstrip()
+    return f"{trimmed}\n...[truncated {len(text) - limit} characters]"
+
+
+def _format_analysis_context(analysis: dict) -> str:
+    key_strengths = analysis.get('Key Strengths') or []
+    missing_keywords = analysis.get('Missing Keywords') or []
+    recommendations = analysis.get('Recommendations') or []
+    category_matches = analysis.get('Category Matches') or {}
+    skill_gaps = analysis.get('Skill Gaps') or {}
+    projects = analysis.get('Projects') or []
+    achievements = analysis.get('Achievements') or []
+
+    category_text = '; '.join(f"{k}: {v}%" for k, v in category_matches.items())
+    skill_gap_text = '; '.join(f"{k}: {', '.join(v)}" for k, v in skill_gaps.items() if v)
+    projects_text = '; '.join(projects)
+    achievements_text = '; '.join(achievements)
+    recommendations_text = '; '.join(recommendations)
+
+    return "\n".join([
+        f"JD Match Score: {analysis.get('JD Match', 'N/A')}",
+        f"Education Insight: {analysis.get('Education', 'N/A')}",
+        f"Experience Insight: {analysis.get('Experience', 'N/A')}",
+        f"Key Strengths: {', '.join(key_strengths) if key_strengths else 'None recorded'}",
+        f"Missing Keywords: {', '.join(missing_keywords) if missing_keywords else 'None detected'}",
+        f"Skill Gaps by Category: {skill_gap_text if skill_gap_text else 'None detected'}",
+        f"Category Matches (%): {category_text if category_text else 'Not available'}",
+        f"Highlighted Projects: {projects_text if projects_text else 'None listed'}",
+        f"Highlighted Achievements: {achievements_text if achievements_text else 'None listed'}",
+        f"Current Recommendations: {recommendations_text if recommendations_text else 'None yet'}"
+    ])
+
+
+def _extract_ai_suggestions(raw_text: str) -> List[str]:
+    suggestions: List[str] = []
+    for line in raw_text.splitlines():
+        cleaned = line.strip().lstrip('-•').strip()
+        if cleaned:
+            suggestions.append(cleaned)
+    if not suggestions and raw_text:
+        suggestions.append(raw_text)
+    return suggestions[:4]
+
+
+def _call_gemini(prompt: str, api_key: str) -> Tuple[List[str], str, Optional[str]]:
+    if not api_key:
+        return [], "Google Gemini", "Gemini API key is missing."
+
+    if requests is None:
+        return [], "Google Gemini", "The 'requests' package is required to call the Gemini API."
+
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.6,
+            "maxOutputTokens": 512,
+        }
+    }
+
+    try:
+        response = requests.post(url, params={"key": api_key}, json=payload, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        parts: List[str] = []
+        for candidate in data.get("candidates", []):
+            content = candidate.get("content", {})
+            for part in content.get("parts", []):
+                text = part.get("text")
+                if text:
+                    parts.append(text)
+        combined = "\n".join(parts).strip()
+        if not combined:
+            return [], "Google Gemini", "Gemini returned an empty response."
+        return _extract_ai_suggestions(combined), "Google Gemini", None
+    except requests.HTTPError as http_err:  # pragma: no cover
+        return [], "Google Gemini", f"Gemini error: {http_err.response.text[:200]}"
+    except Exception as exc:  # pragma: no cover
+        return [], "Google Gemini", f"Unable to reach Gemini: {exc}"
+
+
+def _call_groq(prompt: str, api_key: str) -> Tuple[List[str], str, Optional[str]]:
+    if not api_key:
+        return [], "Groq", "Groq API key is missing."
+
+    if requests is None:
+        return [], "Groq", "The 'requests' package is required to call the Groq API."
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    payload = {
+        "model": "llama-3.1-70b-versatile",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a seasoned technical recruiter and career coach. Provide succinct, high-impact resume improvement advice."
+            },
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.5,
+        "max_tokens": 512,
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        content = (
+            data.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+            .strip()
+        )
+        if not content:
+            return [], "Groq", "Groq returned an empty response."
+        return _extract_ai_suggestions(content), "Groq", None
+    except requests.HTTPError as http_err:  # pragma: no cover
+        return [], "Groq", f"Groq error: {http_err.response.text[:200]}"
+    except Exception as exc:  # pragma: no cover
+        return [], "Groq", f"Unable to reach Groq: {exc}"
+
+
+def generate_ai_recommendations(
+    resume_text: str,
+    jd_text: str,
+    analysis: dict,
+    primary_provider: Optional[str],
+    primary_key: Optional[str],
+    fallback_provider: Optional[str] = None,
+    fallback_key: Optional[str] = None
+) -> Tuple[List[str], Optional[str], Optional[str]]:
+    """Produce enhanced recommendations using Gemini (primary) with optional Groq fallback."""
+
+    if requests is None:
+        return [], None, "Install the 'requests' library to enable AI-powered suggestions."
+
+    if not primary_provider or not primary_key:
+        return [], None, "No AI provider configured. Add an API key in the sidebar."
+
+    prompt = (
+        "Act as an expert ATS resume consultant. Using the full context below, suggest up to four precise, actionable improvements "
+        "that the candidate can make to increase alignment with the job requirements. Avoid repeating the existing recommendations.\n\n"
+        "Job Description:\n"
+        f"{_truncate_for_ai(jd_text)}\n\n"
+        "Resume (raw text extract):\n"
+        f"{_truncate_for_ai(resume_text)}\n\n"
+        "ATS Analysis Summary:\n"
+        f"{_format_analysis_context(analysis)}\n\n"
+        "Response format: bullet list with each bullet focusing on a distinct, measurable improvement."
+    )
+
+    def _dispatch(provider: str, api_key: str) -> Tuple[List[str], Optional[str], Optional[str]]:
+        provider = provider.lower()
+        if provider == "gemini":
+            suggestions, label, error = _call_gemini(prompt, api_key)
+        elif provider == "groq":
+            suggestions, label, error = _call_groq(prompt, api_key)
+        else:
+            return [], None, f"Unsupported AI provider: {provider}"
+        return suggestions, label, error
+
+    suggestions, provider_label, error = _dispatch(primary_provider, primary_key)
+
+    if error and fallback_provider and fallback_key:
+        fallback_suggestions, fallback_label, fallback_error = _dispatch(fallback_provider, fallback_key)
+        if not fallback_error and fallback_suggestions:
+            return fallback_suggestions, fallback_label, None
+        error = f"{error} | Fallback failed: {fallback_error}"
+
+    return suggestions, provider_label, error
+
+def generate_ai_recommendations(
+    resume_text: str,
+    jd_text: str,
+    existing_recommendations: List[str],
+    api_key: str
+) -> tuple[List[str], str | None]:
+    """Call a generative AI model to get additional tailored recommendations."""
+
+    if requests is None:
+        return [], "The 'requests' package is required to call the AI API. Install it and retry."
+
+    if not api_key:
+        return [], "Please provide a valid OpenAI API key in the sidebar."
+
+    base_prompt = (
+        "You are an expert ATS and resume coach. Given the raw resume text and job description, "
+        "produce up to three concise, actionable recommendations that complement the existing list. "
+        "Do not repeat the existing recommendations verbatim. Respond as a bullet list."
+    )
+
+    user_context = (
+        "Job Description:\n" + jd_text.strip() + "\n\n"
+        "Resume:\n" + resume_text.strip() + "\n\n"
+        "Existing Recommendations:\n- " + "\n- ".join(existing_recommendations)
+    )
+
+    payload = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": base_prompt},
+            {"role": "user", "content": user_context}
+        ],
+        "temperature": 0.6,
+        "max_tokens": 300,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        content = (
+            data.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+            .strip()
+        )
+        if not content:
+            return [], "AI response was empty. Try again."
+
+        suggestions: List[str] = []
+        for line in content.splitlines():
+            cleaned = line.strip().lstrip("-•").strip()
+            if cleaned:
+                suggestions.append(cleaned)
+
+        if not suggestions:
+            suggestions.append(content)
+
+        return suggestions[:3], None
+    except requests.HTTPError as http_err:  # pragma: no cover
+        return [], f"AI service returned an error: {http_err.response.text[:200]}"
+    except Exception as exc:  # pragma: no cover
+        return [], f"Unable to fetch AI recommendations: {exc}"
+
 @st.cache_data 
 def get_ats_feedback(resume_text, jd_text):
     resume_keywords, resume_categories = extract_skills_and_keywords(resume_text)
@@ -1037,6 +1341,41 @@ if evaluate_btn:
         match_pct = max(0.0, min(100.0, match_pct))
         results['JD Match'] = f"{match_pct}%"
         
+        # Optionally fetch AI-generated recommendations
+        ai_suggestions: List[str] = []
+        ai_provider_label: Optional[str] = None
+        ai_error: Optional[str] = None
+        if use_ai_coach:
+            primary_provider: Optional[str] = None
+            primary_key: Optional[str] = None
+            fallback_provider: Optional[str] = None
+            fallback_key: Optional[str] = None
+
+            if gemini_api_key:
+                primary_provider = "gemini"
+                primary_key = gemini_api_key
+                if groq_api_key:
+                    fallback_provider = "groq"
+                    fallback_key = groq_api_key
+            elif groq_api_key:
+                primary_provider = "groq"
+                primary_key = groq_api_key
+
+            if not primary_provider:
+                ai_error = "Provide at least one API key (Gemini or Groq) in the sidebar to enable AI assistance."
+            else:
+                spinner_label = "Requesting AI-driven suggestions..."
+                with st.spinner(spinner_label):
+                    ai_suggestions, ai_provider_label, ai_error = generate_ai_recommendations(
+                        resume_text,
+                        jd_input,
+                        results,
+                        primary_provider,
+                        primary_key,
+                        fallback_provider,
+                        fallback_key,
+                    )
+
         # Determine color and status based on score
         if match_pct >= 80:
             color = '#10b981'
@@ -1256,6 +1595,40 @@ if evaluate_btn:
                     """, unsafe_allow_html=True)
             else:
                 st.info("No specific recommendations at this time. Your resume looks solid!")
+
+            if use_ai_coach:
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("""
+                    <div class='result-card'>
+                        <h3 class='card-title'>🤖 AI-Assisted Suggestions</h3>
+                        <p style='color: var(--neutral-600); margin: 0; font-size: 0.875rem;'>
+                            Generative AI highlights additional refinements tailored to this resume.
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+                if ai_error:
+                    st.warning(ai_error)
+                elif ai_suggestions:
+                    badge_html = ""
+                    if ai_provider_label:
+                        badge_html = f"""
+                            <span class='ai-badge'>
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 2 L15 9 H9 L12 22 L9 14 H15 L12 2 Z"></path>
+                                </svg>
+                                Powered by {ai_provider_label}
+                            </span>
+                        """
+                    if badge_html:
+                        st.markdown(f"<div style='margin-bottom: 0.75rem;'>{badge_html}</div>", unsafe_allow_html=True)
+                    for idx, suggestion in enumerate(ai_suggestions, 1):
+                        st.markdown(f"""
+                            <div class='recommendation-item ai-recommendation'>
+                                <strong>AI Tip {idx}</strong> {suggestion}
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.info("No additional AI suggestions were generated. Try again in a moment.")
             
             # Display general resume improvement tips
             st.markdown("<br>", unsafe_allow_html=True)

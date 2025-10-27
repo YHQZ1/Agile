@@ -5,6 +5,14 @@ const pool = require("../config/db");
 const authenticateToken = require("../middleware/authenticationToken"); // Import the authentication middleware
 const router = express.Router();
 
+const isProduction = process.env.NODE_ENV === "production";
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "None" : "Lax",
+  maxAge: 60 * 60 * 1000, // 1 hour
+};
+
 // POST /api/auth/login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -35,16 +43,8 @@ router.post("/login", async (req, res) => {
       expiresIn: "1h",
     });
 
-    console.log("Token generated:", token); 
-
     // Send the token as an HTTP-only cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 3600000, // 1 hour
-      sameSite: 'Lax',
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.status(200).json({ message: "Login successful", token });
   } catch (error) {
@@ -83,13 +83,8 @@ router.post("/signup", async (req, res) => {
       expiresIn: "1h",
     });
 
-     // Send the token as an HTTP-only cookie to avoid XXS attacks
-     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      ssameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-      maxAge: 3600000, // 1 hour
-    });
+    // Send the token as an HTTP-only cookie to avoid XSS attacks
+    res.cookie("token", token, cookieOptions);
 
     return res.status(201).json({ message: "Sign-up successful", token });
   } catch (error) {

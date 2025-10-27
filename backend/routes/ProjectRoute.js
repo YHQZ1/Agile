@@ -4,11 +4,14 @@ const authenticateToken = require('../middleware/authenticationToken');
 const pool = require('../config/db');
 
 router.post('/', authenticateToken, async (req, res) => {
-    const { user_id, project_title, description, tech_stack, project_link, role } = req.body;
-    console.log("Received data:", req.body);
+    const userId = req.user.id;
+    const { project_title, description, tech_stack, project_link, role } = req.body;
+    if (process.env.NODE_ENV !== 'production') {
+        console.log("Received project payload:", { project_title, description, tech_stack, project_link, role });
+    }
 
     // Validate required NOT NULL fields
-    if (!user_id || !project_title || !description || !tech_stack) {
+    if (!project_title || !description || !tech_stack) {
         return res.status(400).json({ error: 'Required fields are missing' });
     }
 
@@ -16,7 +19,7 @@ router.post('/', authenticateToken, async (req, res) => {
         // Verify user exists (since there's a foreign key constraint)
         const userCheck = await pool.query(
             'SELECT 1 FROM personal_details WHERE user_id = $1', 
-            [user_id]
+            [userId]
         );
         if (userCheck.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
@@ -30,7 +33,7 @@ router.post('/', authenticateToken, async (req, res) => {
             RETURNING project_id
         `;
         const values = [
-            user_id, project_title, description, 
+            userId, project_title, description, 
             tech_stack, project_link, role
         ];
 

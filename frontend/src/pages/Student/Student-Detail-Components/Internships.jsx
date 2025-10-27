@@ -13,12 +13,6 @@ const Internships = ({ internships, handleInputChange, addItem, removeItem, onSa
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -42,7 +36,7 @@ const Internships = ({ internships, handleInputChange, addItem, removeItem, onSa
           }
         }
         
-        if (internship.stipend && internship.stipend < 0) {
+  if (internship.stipend && Number(internship.stipend) < 0) {
           errors.push(`Record ${index + 1}: Stipend cannot be negative`);
         }
         return errors;
@@ -55,6 +49,10 @@ const Internships = ({ internships, handleInputChange, addItem, removeItem, onSa
       // Submit each record individually
       const results = await Promise.all(
         internships.map(async (internship) => {
+          const stipendValue = internship.stipend === '' || internship.stipend === null || internship.stipend === undefined
+            ? null
+            : Number(internship.stipend);
+
           const requestBody = {
             company_name: internship.company,
             job_title: internship.position,
@@ -62,23 +60,19 @@ const Internships = ({ internships, handleInputChange, addItem, removeItem, onSa
             company_sector: internship.sector,
             start_date: internship.startDate,
             end_date: internship.endDate,
-            stipend_salary: internship.stipend || null
+            stipend_salary: Number.isNaN(stipendValue) ? null : stipendValue
           };
-
-          console.log('Submitting:', requestBody); // Debug log
 
           const response = await fetch(`${BASE_URL}/api/internship-details-form`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${getCookie('token')}`
+              'Content-Type': 'application/json'
             },
             credentials: 'include',
             body: JSON.stringify(requestBody)
           });
 
           const responseData = await response.json();
-          console.log('Response:', response.status, responseData); // Debug log
 
           if (!response.ok) {
             throw new Error(responseData.error || `Failed to save record (Status: ${response.status})`);

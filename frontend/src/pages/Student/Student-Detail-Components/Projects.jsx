@@ -7,12 +7,6 @@ const Projects = ({ projects, handleInputChange, addItem, removeItem, onSave }) 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -20,31 +14,38 @@ const Projects = ({ projects, handleInputChange, addItem, removeItem, onSave }) 
     setSuccess(null);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/projects-form`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('token')}`
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          projects: projects.map(project => ({
-            title: project.title,
-            description: project.description,
-            tech_stack: project.techStack,
-            link: project.link,
-            role: project.role
-          }))
+      const results = await Promise.all(
+        projects.map(async (project) => {
+          if (!project.title || !project.description || !project.techStack) {
+            throw new Error('Please complete all required project fields before saving.');
+          }
+
+          const response = await fetch(`${BASE_URL}/api/projects-form`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              project_title: project.title,
+              description: project.description,
+              tech_stack: project.techStack,
+              project_link: project.link || null,
+              role: project.role || null
+            })
+          });
+
+          const responseData = await response.json();
+
+          if (!response.ok) {
+            throw new Error(responseData.error || 'Failed to save project');
+          }
+
+          return responseData;
         })
-      });
+      );
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to save projects');
-      }
-
-      setSuccess('Projects saved successfully');
+      setSuccess(`${results.length} project${results.length > 1 ? 's' : ''} saved successfully`);
       if (onSave) {
         onSave();
       }

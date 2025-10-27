@@ -6,7 +6,7 @@ import "../../styles/Student/StudentDashboard.css";
 const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
 
 export default function StudentDashboard() {
-  const [personalDetails, setPersonalDetails] = useState({
+  const initialPersonalDetails = {
     firstName: '',
     lastName: '',
     email: '',
@@ -15,75 +15,21 @@ export default function StudentDashboard() {
     gender: '',
     instituteRollNo: '',
     profilePicture: ''
-  });
+  };
 
-  const [internshipDetails, setInternshipDetails] = useState({
-    company: '', 
-    position: '', 
-    location: '', 
-    sector: '',
-    startDate: '', 
-    endDate: '', 
-    stipend: ''
-  });
-
-  const [volunteeringDetails, setVolunteeringDetails] = useState({
-    organization: '', 
-      location: '',
-      sector: '',
-      task: '', 
-      startDate: '', 
-      endDate: ''
-  });
-
-  const [skillsDetails, setSkillsDetails] = useState({
-    name: '', 
-    proficiency: '' 
-  });
-
-  const [projectDetails, setProjectDetails] = useState({
-    title: '', 
-    description: '', 
-    techStack: '', 
-    link: '', 
-    role: '' 
-  });
-
-  const [accomplishmentDetails, setAccomplishmentDetails] = useState({
-    title: '', 
-    institution: '',
-    type: '',
-    description: '', 
-    date: '', 
-    rank: ''
-  });
-
-  const [extraCurricularDetails, setExtraCurricularDetails] = useState({
-    activity: '', 
-    role: '', 
-    organization: '', 
-    duration: ''
-  });
-
-  const [competitionDetails, setCompetitionDetails] = useState({
-    name: '', 
-    date: '', 
-    role: '', 
-    achievement: '', 
-    skills: ''
-  });
+  const [personalDetails, setPersonalDetails] = useState(initialPersonalDetails);
+  const [internshipDetails, setInternshipDetails] = useState([]);
+  const [volunteeringDetails, setVolunteeringDetails] = useState([]);
+  const [skillsDetails, setSkillsDetails] = useState([]);
+  const [accomplishmentDetails, setAccomplishmentDetails] = useState([]);
+  const [extraCurricularDetails, setExtraCurricularDetails] = useState([]);
+  const [competitionDetails, setCompetitionDetails] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('personal');
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('overview');
-
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
 
   const getProficiencyColor = (proficiency) => {
     switch(proficiency) {
@@ -96,319 +42,272 @@ export default function StudentDashboard() {
 
   const fetchPersonalDetails = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
       const response = await axios.get(`${BASE_URL}/api/personal-information`, {
-        withCredentials: true,
-        headers: {
-          'Authorization': `Bearer ${getCookie('token')}`
-        }
+        withCredentials: true
       });
 
-      const data = response.data.data;
+      const data = response.data?.data;
+
+      if (!data) {
+        setPersonalDetails(initialPersonalDetails);
+        return;
+      }
 
       setPersonalDetails({
-        firstName: data?.first_name || '',
-        lastName: data?.last_name || '',
-        email: data?.personal_email || '',
-        phone: data?.phone_number || '',
-        dob: data?.dob || '',
-        gender: data?.gender || '',
-        instituteRollNo: data?.institute_roll_no || '',
-        profilePicture: data?.profile_picture || ''
+        firstName: data.first_name || '',
+        lastName: data.last_name || '',
+        email: data.personal_email || '',
+        phone: data.phone_number || '',
+        dob: data.dob || '',
+        gender: data.gender || '',
+        instituteRollNo: data.institute_roll_no || '',
+        profilePicture: data.profile_picture || ''
       });
-
     } catch (err) {
-      console.error('Error fetching data:', err);
-      
       if (err.response?.status === 401) {
         navigate('/login');
         return;
       }
 
-      setError(err.response?.data?.error || 'Failed to load personal details');
-    } finally {
-      setLoading(false);
+      if (err.response?.status === 404) {
+        setPersonalDetails(initialPersonalDetails);
+        return;
+      }
+
+      throw err;
     }
   };
 
   const fetchVolunteerDetails = async () => {
     try {
-      setLoading(true);
-      setError(null);
-  
       const response = await axios.get(`${BASE_URL}/api/volunteer-information`, {
-        withCredentials: true,
-        headers: {
-          'Authorization': `Bearer ${getCookie('token')}`
-        }
+        withCredentials: true
       });
-  
-      // Assuming the API returns an array of volunteer experiences
-      const data = response.data.data || [];
-      
-      // Map the data to the format you need
+
+      const data = response.data?.data || [];
+
       const formattedData = data.map(item => ({
-        organization: item?.organization || '',
-        location: item?.location || '',
-        sector: item?.sector || '',
-        task: item?.task || '',
-        startDate: item?.start_date || '',
-        endDate: item?.end_date || ''
+        volunteering_id: item.volunteering_id || null,
+        organization: item.organization || item.task || 'Volunteering',
+        location: item.location || '',
+        sector: item.company_sector || '',
+        task: item.task || '',
+        startDate: item.start_date || '',
+        endDate: item.end_date || ''
       }));
-  
+
       setVolunteeringDetails(formattedData);
-  
     } catch (err) {
-      console.error('Error fetching data:', err);
-      
       if (err.response?.status === 401) {
         navigate('/login');
         return;
       }
-  
-      setError(err.response?.data?.error || 'Failed to load volunteer details');
-    } finally {
-      setLoading(false);
+
+      if (err.response?.status === 404) {
+        setVolunteeringDetails([]);
+        return;
+      }
+
+      throw err;
     }
   };
 
   const fetchInternshipDetails = async () => {
     try {
-      setLoading(true);
-      setError(null);
-  
       const response = await axios.get(`${BASE_URL}/api/internship-information`, {
-        withCredentials: true,
-        headers: {
-          'Authorization': `Bearer ${getCookie('token')}`
-        }
+        withCredentials: true
       });
-  
-      // Assuming the API returns an array of volunteer experiences
-      const data = response.data.data || [];
-      
-      // Map the data to the format you need
+
+      const data = response.data?.data || [];
+
       const formattedData = data.map(item => ({
-        internship_id: item?.internship_id || null,
-        user_id: item?.user_id || null,
-        company_name: item?.company_name || '',
-        job_title: item?.job_title || '',
-        location: item?.location || '',
-        company_sector: item?.company_sector || '',
-        start_date: item?.start_date ? new Date(item.start_date).toISOString().split('T')[0] : '',
-        end_date: item?.end_date ? new Date(item.end_date).toISOString().split('T')[0] : '',
-        stipend_salary: item?.stipend_salary || 0
+        internship_id: item.internship_id || null,
+        company: item.company_name || '',
+        position: item.job_title || '',
+        location: item.location || '',
+        sector: item.company_sector || '',
+        startDate: item.start_date || '',
+        endDate: item.end_date || '',
+        stipend: item.stipend_salary || ''
       }));
-  
+
       setInternshipDetails(formattedData);
-  
     } catch (err) {
-      console.error('Error fetching data:', err);
-      
       if (err.response?.status === 401) {
         navigate('/login');
         return;
       }
-  
-      setError(err.response?.data?.error || 'Failed to load internship details');
-    } finally {
-      setLoading(false);
+
+      if (err.response?.status === 404) {
+        setInternshipDetails([]);
+        return;
+      }
+
+      throw err;
     }
   };
 
   const fetchCompetitionDetails = async () => {
     try {
-      setLoading(true);
-      setError(null);
-  
       const response = await axios.get(`${BASE_URL}/api/competition-information`, {
-        withCredentials: true,
-        headers: {
-          'Authorization': `Bearer ${getCookie('token')}`
-        }
+        withCredentials: true
       });
-  
-      // Assuming the API returns an array of volunteer experiences
-      const data = response.data.data || [];
-      
-      // Map the data to the format you need
+
+      const data = response.data?.data || [];
+
       const formattedData = data.map(item => ({
-        event_id: item?.event_id || null,
-        event_name: item?.event_name || '',
-        event_date: item?.event_date ? new Date(item.event_date).toISOString().split('T')[0] : '',
-        role: item?.role || '',
-        achievement: item?.achievement || '',
-        skills: item?.skills || [],
-        user_id: item?.user_id || null
+        event_id: item.event_id || null,
+        event_name: item.event_name || '',
+        event_date: item.event_date || '',
+        role: item.role || '',
+        achievement: item.achievement || '',
+        skills: item.skills
+          ? item.skills.split(',').map((skill) => skill.trim()).filter(Boolean)
+          : [],
       }));
-  
+
       setCompetitionDetails(formattedData);
-  
     } catch (err) {
-      console.error('Error fetching data:', err);
-      
       if (err.response?.status === 401) {
         navigate('/login');
         return;
       }
-  
-      setError(err.response?.data?.error || 'Failed to load competitions and events details');
-    } finally {
-      setLoading(false);
+
+      if (err.response?.status === 404) {
+        setCompetitionDetails([]);
+        return;
+      }
+
+      throw err;
     }
   };
 
   const fetchSkillsDetails = async () => {
     try {
-      setLoading(true);
-      setError(null);
-  
       const response = await axios.get(`${BASE_URL}/api/skills-information`, {
-        withCredentials: true,
-        headers: {
-          'Authorization': `Bearer ${getCookie('token')}`
-        }
+        withCredentials: true
       });
-  
-      // Assuming the API returns an array of volunteer experiences
-      const data = response.data.data || [];
-      
-      // Map the data to the format you need
+
+      const data = response.data?.data || [];
+
       const formattedData = data.map(item => ({
-        skill_id: item?.skill_id || null,
-        skill_name: item?.skill_name || '',
-        skill_proficiency: item?.skill_proficiency || '',
-        user_id: item?.user_id || null
+        skill_id: item.skill_id || null,
+        skill_name: item.skill_name || '',
+        skill_proficiency: item.skill_proficiency || 'Beginner'
       }));
-  
+
       setSkillsDetails(formattedData);
-  
     } catch (err) {
-      console.error('Error fetching data:', err);
-      
       if (err.response?.status === 401) {
         navigate('/login');
         return;
       }
-  
-      setError(err.response?.data?.error || 'Failed to load skills details');
-    } finally {
-      setLoading(false);
+
+      if (err.response?.status === 404) {
+        setSkillsDetails([]);
+        return;
+      }
+
+      throw err;
     }
   };
 
   const fetchAccomplishmentDetails = async () => {
     try {
-      setLoading(true);
-      setError(null);
-  
       const response = await axios.get(`${BASE_URL}/api/accomplishment-information`, {
-        withCredentials: true,
-        headers: {
-          'Authorization': `Bearer ${getCookie('token')}`
-        }
+        withCredentials: true
       });
-  
-      // Assuming the API returns an array of volunteer experiences
-      const data = response.data.data || [];
-      
-      // Map the data to the format you need
+
+      const data = response.data?.data || [];
+
       const formattedData = data.map(item => ({
-        accomplishment_id: item?.accomplishment_id || null,
-        title: item?.title || '',
-        institution: item?.institution || '',
-        type: item?.type || '',
-        description: item?.description || '',
-        accomplishment_date: item?.accomplishment_date ? new Date(item.accomplishment_date).toISOString().split('T')[0] : '',
-        rank: item?.rank || '',
-        user_id: item?.user_id || null
+        accomplishment_id: item.accomplishment_id || null,
+        title: item.title || '',
+        institution: item.institution || '',
+        type: item.type || '',
+        description: item.description || '',
+        accomplishment_date: item.accomplishment_date || '',
+        rank: item.rank || ''
       }));
-  
+
       setAccomplishmentDetails(formattedData);
-  
     } catch (err) {
-      console.error('Error fetching data:', err);
-      
       if (err.response?.status === 401) {
         navigate('/login');
         return;
       }
-  
-      setError(err.response?.data?.error || 'Failed to load accomplishment details');
-    } finally {
-      setLoading(false);
+
+      if (err.response?.status === 404) {
+        setAccomplishmentDetails([]);
+        return;
+      }
+
+      throw err;
     }
   };
 
   const fetchExtraCurricularDetails = async () => {
     try {
-      setLoading(true);
-      setError(null);
-  
       const response = await axios.get(`${BASE_URL}/api/extra-curricular-information`, {
-        withCredentials: true,
-        headers: {
-          'Authorization': `Bearer ${getCookie('token')}`
-        }
+        withCredentials: true
       });
-  
-      // Assuming the API returns an array of volunteer experiences
-      const data = response.data.data || [];
-      
-      // Map the data to the format you need
+
+      const data = response.data?.data || [];
+
       const formattedData = data.map(item => ({
-        extra_curricular_id: item?.extra_curricular_id || null,
-        activity_name: item?.activity_name || '',
-        role: item?.role || '',
-        organization: item?.organization || '',
-        duration: item?.duration || null,  // or you could format this if needed
-        user_id: item?.user_id || null
-    }));
-  
+        extra_curricular_id: item.extra_curricular_id || null,
+        activity_name: item.activity_name || '',
+        role: item.role || '',
+        organization: item.organization || '',
+        duration: item.duration || ''
+      }));
+
       setExtraCurricularDetails(formattedData);
-  
     } catch (err) {
-      console.error('Error fetching data:', err);
-      
       if (err.response?.status === 401) {
         navigate('/login');
         return;
       }
-  
-      setError(err.response?.data?.error || 'Failed to load extra curricular details');
-    } finally {
-      setLoading(false);
+
+      if (err.response?.status === 404) {
+        setExtraCurricularDetails([]);
+        return;
+      }
+
+      throw err;
     }
   };
 
   useEffect(() => {
-    fetchPersonalDetails();
-  }, [navigate]);
+    const loadDashboardData = async () => {
+      setLoading(true);
+      setError(null);
 
-  useEffect(() => {
-    fetchVolunteerDetails();
-  }, [navigate]);
+      const results = await Promise.allSettled([
+        fetchPersonalDetails(),
+        fetchVolunteerDetails(),
+        fetchInternshipDetails(),
+        fetchCompetitionDetails(),
+        fetchSkillsDetails(),
+        fetchAccomplishmentDetails(),
+        fetchExtraCurricularDetails()
+      ]);
 
-  useEffect(() => {
-    fetchInternshipDetails();
-  }, [navigate]);
+      const failures = results.filter((result) => result.status === 'rejected');
+      if (failures.length === results.length) {
+        const err = failures[0].reason;
+        console.error('Error loading dashboard data:', err);
+        setError(err?.response?.data?.error || err?.message || 'Failed to load dashboard');
+      } else if (failures.length > 0) {
+        failures.forEach((failure) => {
+          console.warn('Partial dashboard load failure:', failure.reason);
+        });
+      }
 
-  useEffect(() => {
-    fetchCompetitionDetails();
-  }, [navigate]);
+      setLoading(false);
+    };
 
-  useEffect(() => {
-    fetchSkillsDetails();
-  }, [navigate]);
-
-  useEffect(() => {
-    fetchAccomplishmentDetails();
-  }, [navigate]);
-
-  useEffect(() => {
-    fetchExtraCurricularDetails();
+    loadDashboardData();
   }, [navigate]);
 
   const formatDate = (dateString) => {

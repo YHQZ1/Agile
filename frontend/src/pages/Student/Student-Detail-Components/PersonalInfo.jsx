@@ -9,27 +9,17 @@ const PersonalInfo = ({ formData, handleInputChange, onSave }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     setSuccess(null);
 
-    console.log('Current cookies:', document.cookie);
-    console.log('Sending request to:', `${BASE_URL}/api/personal-details-form`);
-
     try {
       const response = await fetch(`${BASE_URL}/api/personal-details-form`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-           'Authorization': `Bearer ${getCookie('token')}`
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify({

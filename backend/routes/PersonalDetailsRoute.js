@@ -4,8 +4,8 @@ const authenticateToken = require('../middleware/authenticationToken');
 const pool = require('../config/db');
 
 router.post('/', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
     const { first_name, last_name, dob, gender, institute_roll_no, personal_email, phone_number } = req.body;
-    console.log("Received data:", req.body);
 
     // Validate required fields
     if (!first_name || !last_name || !dob || !institute_roll_no || !phone_number) {
@@ -29,14 +29,28 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         const query = `
             INSERT INTO personal_details (
-                first_name, last_name, dob, gender, 
+                user_id, first_name, last_name, dob, gender,
                 institute_roll_no, personal_email, phone_number
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (user_id) DO UPDATE SET
+                first_name = EXCLUDED.first_name,
+                last_name = EXCLUDED.last_name,
+                dob = EXCLUDED.dob,
+                gender = EXCLUDED.gender,
+                institute_roll_no = EXCLUDED.institute_roll_no,
+                personal_email = EXCLUDED.personal_email,
+                phone_number = EXCLUDED.phone_number
             RETURNING user_id
         `;
         const values = [
-            first_name, last_name, dob, gender, 
-            institute_roll_no, personal_email, phone_number
+            userId,
+            first_name,
+            last_name,
+            dob,
+            gender,
+            institute_roll_no,
+            personal_email,
+            phone_number
         ];
 
         const result = await pool.query(query, values);
@@ -50,10 +64,10 @@ router.post('/', authenticateToken, async (req, res) => {
         
         // Handle unique constraint violations
         if (error.code === '23505') {
-            if (error.constraint === 'authentication_institute_roll_no_key') {
+            if (['authentication_institute_roll_no_key', 'personal_details_institute_roll_no_key'].includes(error.constraint)) {
                 return res.status(400).json({ error: 'Institute roll number already exists' });
             }
-            if (error.constraint === 'authentication_phone_number_key') {
+            if (['authentication_phone_number_key', 'personal_details_phone_number_key'].includes(error.constraint)) {
                 return res.status(400).json({ error: 'Phone number already exists' });
             }
         }

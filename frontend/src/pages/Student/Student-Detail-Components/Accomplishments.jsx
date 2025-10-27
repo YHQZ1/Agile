@@ -12,12 +12,6 @@ const Accomplishments = ({ accomplishments, handleInputChange, addItem, removeIt
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -25,32 +19,39 @@ const Accomplishments = ({ accomplishments, handleInputChange, addItem, removeIt
     setSuccess(null);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/accomplishment-form`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('token')}`
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          accomplishments: accomplishments.map(accomplishment => ({
-            title: accomplishment.title,
-            institution: accomplishment.institution,
-            type: accomplishment.type,
-            description: accomplishment.description,
-            date: accomplishment.date,
-            rank: accomplishment.rank || null
-          }))
+      const results = await Promise.all(
+        accomplishments.map(async (accomplishment) => {
+          if (!accomplishment.title) {
+            throw new Error('Title is required for each accomplishment');
+          }
+
+          const response = await fetch(`${BASE_URL}/api/accomplishment-form`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              title: accomplishment.title,
+              institution: accomplishment.institution || null,
+              type: accomplishment.type || null,
+              description: accomplishment.description || null,
+              accomplishment_date: accomplishment.date || null,
+              rank: accomplishment.rank || null
+            })
+          });
+
+          const responseData = await response.json();
+
+          if (!response.ok) {
+            throw new Error(responseData.error || 'Failed to save accomplishment');
+          }
+
+          return responseData;
         })
-      });
+      );
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to save accomplishments');
-      }
-
-      setSuccess('Accomplishments saved successfully');
+      setSuccess(`${results.length} accomplishment${results.length > 1 ? 's' : ''} saved successfully`);
       if (onSave) {
         onSave();
       }

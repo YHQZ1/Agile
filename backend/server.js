@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 // const bodyParser = require("body-parser"); // Remove this
 // const userRoutes = require("./routes/userRoutes");
 const errorHandler = require("./middleware/errorMiddleware");
@@ -12,27 +11,46 @@ const { Pool } = require("pg");
 
 const app = express();
 
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://verq-pi.vercel.app',
-  'https://verq-pcae1zlxv-rudras-projects-cd8653fc.vercel.app',
-];
+// Render sits behind a proxy – trust first hop so secure cookies work
+app.set("trust proxy", 1);
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
+const defaultOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  process.env.FRONTEND_URL,
+  process.env.ATS_URL,
+]
+  .filter(Boolean)
+  .map((origin) => origin.trim());
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true; // mobile apps / curl
+  if (defaultOrigins.includes(origin)) return true;
+
+  try {
+    const { hostname } = new URL(origin);
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return true;
+    }
+    return hostname.endsWith(".vercel.app");
+  } catch (err) {
+    return false;
+  }
+};
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
-  exposedHeaders: ['set-cookie'] // Add this line
-}));
+  exposedHeaders: ["set-cookie"],
+};
 
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -84,15 +102,12 @@ app.use("/api/skills-information", SkillsInformation);
 app.use("/api/accomplishment-information", AccomplishmentInformation);
 app.use("/api/extra-curricular-information", ExtraCurricularInformation );
 
-// Serve static files from React build folder
-app.use(express.static(path.join(__dirname, "dist")));
-
-// Catch-all handler for non-API routes
-app.get("*", (req, res, next) => {
+// Catch-all handler for non-API routes (frontend served from Vercel)
+app.use((req, res, next) => {
   if (req.originalUrl.startsWith("/api")) {
-    return next(); // Let it fall through to 404 or errorHandler
+    return next();
   }
-  res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
+  res.status(404).json({ message: "Route not found" });
 });
 
 app.use("/api", (req, res, next) => {

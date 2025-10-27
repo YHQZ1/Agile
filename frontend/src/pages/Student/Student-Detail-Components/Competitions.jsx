@@ -7,12 +7,6 @@ const Competitions = ({ competitions, handleInputChange, addItem, removeItem, on
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -20,31 +14,38 @@ const Competitions = ({ competitions, handleInputChange, addItem, removeItem, on
     setSuccess(null);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/competitions-form`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('token')}`
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          competitions: competitions.map(competition => ({
-            event_name: competition.name,
-            date: competition.date,
-            role: competition.role,
-            achievement: competition.achievement,
-            skills_demonstrated: competition.skills
-          }))
+      const results = await Promise.all(
+        competitions.map(async (competition) => {
+          if (!competition.name || !competition.date) {
+            throw new Error('Each competition requires a name and date.');
+          }
+
+          const response = await fetch(`${BASE_URL}/api/competitions-form`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              event_name: competition.name,
+              event_date: competition.date,
+              role: competition.role || null,
+              achievement: competition.achievement || null,
+              skills: competition.skills || null
+            })
+          });
+
+          const responseData = await response.json();
+
+          if (!response.ok) {
+            throw new Error(responseData.error || 'Failed to save competition');
+          }
+
+          return responseData;
         })
-      });
+      );
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to save competitions');
-      }
-
-      setSuccess('Competitions saved successfully');
+      setSuccess(`${results.length} competition${results.length > 1 ? 's' : ''} saved successfully`);
       if (onSave) {
         onSave();
       }
