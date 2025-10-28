@@ -16,7 +16,8 @@ router.get('/', authenticateToken, async (req, res) => {
                 gender,
                 institute_roll_no,
                 personal_email, 
-                phone_number
+                phone_number,
+                profile_picture
              FROM personal_details 
              WHERE user_id = $1`,
             [userId]

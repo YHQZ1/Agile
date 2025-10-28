@@ -1,10 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import "../../styles/Recruiter/CompanyProfile.css";
 
 // Constants that could be moved to a separate config file
 const INDUSTRIES = ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Retail', 'Education', 'Other'];
 const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Other'];
 const COMPANY_SIZES = ['Small', 'Medium', 'Large', 'Enterprise'];
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+
+const mapProfileToFormState = (profile) => ({
+  companyName: profile?.company_name || '',
+  industry: profile?.industry || '',
+  companyEmail: profile?.company_email || '',
+  companyPhone: profile?.company_phone || '',
+  addressLine1: profile?.address_line1 || '',
+  addressLine2: profile?.address_line2 || '',
+  city: profile?.city || '',
+  stateProvince: profile?.state_province || '',
+  country: profile?.country || '',
+  zipPostalCode: profile?.postal_code || '',
+  companyWebsite: profile?.website || '',
+  logoUrl: profile?.logo_url || '',
+  companyDescription: profile?.description || '',
+  foundedYear: profile?.founded_year ? String(profile.founded_year) : '',
+  companySize: profile?.company_size || '',
+});
+
+const mapFormToPayload = (formData) => ({
+  company_name: formData.companyName.trim(),
+  industry: formData.industry || null,
+  company_size: formData.companySize || null,
+  company_email: formData.companyEmail || null,
+  company_phone: formData.companyPhone || null,
+  address_line1: formData.addressLine1 || null,
+  address_line2: formData.addressLine2 || null,
+  city: formData.city || null,
+  state_province: formData.stateProvince || null,
+  country: formData.country || null,
+  postal_code: formData.zipPostalCode || null,
+  website: formData.companyWebsite || null,
+  description: formData.companyDescription || null,
+  founded_year: formData.foundedYear ? Number(formData.foundedYear) : null,
+  logo_url: formData.logoUrl || null,
+});
 
 const StepIndicator = ({ step, totalSteps }) => {
   return (
@@ -76,18 +113,14 @@ const BasicInfoStep = ({ formData, errors, handleChange }) => {
       </div>
 
       <div className="form-group">
-        <label>Company Logo</label>
-        <div className="file-upload">
-          <input
-            type="file"
-            id="companyLogo"
-            name="companyLogo"
-            onChange={handleChange}
-            accept="image/*"
-          />
-          <label htmlFor="companyLogo">Choose file</label>
-          <span>{formData.companyLogo ? formData.companyLogo.name : 'No file chosen'}</span>
-        </div>
+        <label>Logo URL</label>
+        <input
+          type="url"
+          name="logoUrl"
+          value={formData.logoUrl}
+          onChange={handleChange}
+          placeholder="https://example.com/logo.png"
+        />
       </div>
     </div>
   );
@@ -234,6 +267,7 @@ const AdditionalInfoStep = ({ formData, errors, handleChange }) => {
           min="1900"
           max={new Date().getFullYear()}
         />
+        {errors.foundedYear && <span className="error-message">{errors.foundedYear}</span>}
       </div>
 
       <div className="form-group">
@@ -253,8 +287,9 @@ const CompanyProfile = () => {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
+
   const [formData, setFormData] = useState({
     companyName: '',
     industry: '',
@@ -267,11 +302,54 @@ const CompanyProfile = () => {
     country: '',
     zipPostalCode: '',
     companyWebsite: '',
-    companyLogo: null,
+    logoUrl: '',
     companyDescription: '',
     foundedYear: '',
     companySize: ''
   });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/recruiter/profile`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.status === 404) {
+          if (isMounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.message || 'Failed to load recruiter profile');
+        }
+
+        if (isMounted && data?.data) {
+          setFormData(mapProfileToFormState(data.data));
+        }
+      } catch (error) {
+        if (isMounted) {
+          setFeedback({ type: 'error', message: error.message || 'Failed to load recruiter profile' });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const validateStep = (step) => {
     const newErrors = {};
@@ -293,6 +371,9 @@ const CompanyProfile = () => {
       if (!formData.companyEmail.trim()) newErrors.companyEmail = 'Email is required';
       else if (!/^\S+@\S+\.\S+$/.test(formData.companyEmail)) newErrors.companyEmail = 'Email is invalid';
       if (!formData.companyPhone.trim()) newErrors.companyPhone = 'Phone is required';
+      if (formData.foundedYear && Number.isNaN(Number(formData.foundedYear))) {
+        newErrors.foundedYear = 'Founded year must be numeric';
+      }
     }
     
     setErrors(newErrors);
@@ -326,24 +407,42 @@ const CompanyProfile = () => {
     if (!validateStep(3)) return;
     
     setIsSubmitting(true);
+    setFeedback({ type: '', message: '' });
     try {
-      // Submit logic here
-      console.log('Form submitted:', formData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setSubmitSuccess(true);
+      const payload = mapFormToPayload(formData);
+      const response = await fetch(`${API_BASE}/api/recruiter/profile`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to save recruiter profile');
+      }
+
+      setFeedback({ type: 'success', message: data?.message || 'Company profile saved successfully' });
+
+      if (data?.data) {
+        setFormData(mapProfileToFormState(data.data));
+      }
     } catch (error) {
       console.error('Submission error:', error);
+      setFeedback({ type: 'error', message: error.message || 'Failed to save recruiter profile' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (submitSuccess) {
+  if (isLoading) {
     return (
-      <div className="form-container success-message">
-        <h2>Registration Successful!</h2>
-        <p>Your company profile has been created successfully.</p>
+      <div className="form-container">
+        <h1>Company Profile</h1>
+        <p>Loading company details...</p>
       </div>
     );
   }
@@ -352,6 +451,12 @@ const CompanyProfile = () => {
     <div className="form-container">
       <h1>Company Profile</h1>
       
+      {feedback.message && (
+        <div className={`banner ${feedback.type === 'error' ? 'banner-error' : 'banner-success'}`}>
+          {feedback.message}
+        </div>
+      )}
+
       <StepIndicator step={step} totalSteps={3} />
       
       <hr className="divider" />

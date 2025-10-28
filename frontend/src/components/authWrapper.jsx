@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { verifyToken } from './api/Auth';
+import { verifyToken } from '../api/Auth';
 
 const AuthWrapper = ({ children, requireAuth = false }) => {
   const navigate = useNavigate();

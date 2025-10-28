@@ -64,10 +64,10 @@ router.post('/', authenticateToken, async (req, res) => {
         
         // Handle unique constraint violations
         if (error.code === '23505') {
-            if (['authentication_institute_roll_no_key', 'personal_details_institute_roll_no_key'].includes(error.constraint)) {
+            if (error.constraint === 'personal_details_institute_roll_no_key') {
                 return res.status(400).json({ error: 'Institute roll number already exists' });
             }
-            if (['authentication_phone_number_key', 'personal_details_phone_number_key'].includes(error.constraint)) {
+            if (error.constraint === 'personal_details_phone_number_key') {
                 return res.status(400).json({ error: 'Phone number already exists' });
             }
         }

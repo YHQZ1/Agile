@@ -70,6 +70,9 @@ const projectsRoute = require("./routes/ProjectRoute");
 const accomplishmentRoute = require("./routes/AccomplishmentRoute"); 
 const extraCurricularRoute = require("./routes/ExtraCurricularRoute");
 const competitionRoute = require("./routes/CompetitionRoute"); 
+const recruiterProfileRoute = require("./routes/RecruiterProfileRoute");
+const recruiterJobsRoute = require("./routes/RecruiterJobsRoute");
+const recruiterStudentsRoute = require("./routes/RecruiterStudentsRoute");
 
 
 //get calls variables
@@ -92,6 +95,9 @@ app.use("/api/projects-form", projectsRoute);
 app.use("/api/accomplishment-form", accomplishmentRoute);
 app.use("/api/extra-curricular-form", extraCurricularRoute);
 app.use("/api/competitions-form", competitionRoute);
+app.use("/api/recruiter/profile", recruiterProfileRoute);
+app.use("/api/recruiter/jobs", recruiterJobsRoute);
+app.use("/api/recruiter/students", recruiterStudentsRoute);
 
 //get calls routes
 app.use("/api/personal-information", personalInformation);

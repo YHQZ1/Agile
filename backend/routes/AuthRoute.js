@@ -39,14 +39,15 @@ router.post("/login", async (req, res) => {
     }
 
     // Generate JWT token with email in the payload
-    const token = jwt.sign({ id: user.id, email: user.primary_email }, process.env.JWT_SECRET, {
+    const tokenPayload = { id: user.id, email: user.primary_email, role: user.role };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
     // Send the token as an HTTP-only cookie
     res.cookie("token", token, cookieOptions);
 
-    return res.status(200).json({ message: "Login successful", token });
+    return res.status(200).json({ message: "Login successful", token, user: tokenPayload });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -56,9 +57,16 @@ router.post("/login", async (req, res) => {
 // POST /api/auth/signup
 router.post("/signup", async (req, res) => {
   const { email, password } = req.body;
+  let { role } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  const allowedRoles = ["student", "recruiter"];
+  role = typeof role === "string" ? role.toLowerCase().trim() : "student";
+  if (!allowedRoles.includes(role)) {
+    role = "student";
   }
 
   try {
@@ -73,20 +81,21 @@ router.post("/signup", async (req, res) => {
     // Hash the password and create a new user
     const hashedPassword = await bcrypt.hash(password, 10);
     const insertQuery =
-      "INSERT INTO authentication (primary_email, password) VALUES ($1, $2) RETURNING *";
-    const newUserResult = await pool.query(insertQuery, [email, hashedPassword]);
+      "INSERT INTO authentication (primary_email, password, role) VALUES ($1, $2, $3) RETURNING *";
+    const newUserResult = await pool.query(insertQuery, [email, hashedPassword, role]);
 
     const user = newUserResult.rows[0];
 
     // Generate JWT token with email in the payload
-    const token = jwt.sign({ id: user.id, email: user.primary_email }, process.env.JWT_SECRET, {
+    const tokenPayload = { id: user.id, email: user.primary_email, role: user.role };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
     // Send the token as an HTTP-only cookie to avoid XSS attacks
     res.cookie("token", token, cookieOptions);
 
-    return res.status(201).json({ message: "Sign-up successful", token });
+  return res.status(201).json({ message: "Sign-up successful", token, user: tokenPayload });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
