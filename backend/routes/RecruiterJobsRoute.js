@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const pool = require("../config/db");
+const supabase = require("../config/supabaseClient");
 const authenticateToken = require("../middleware/authenticationToken");
 const requireRecruiter = require("../middleware/requireRecruiter");
 
@@ -9,19 +9,32 @@ router.use(authenticateToken, requireRecruiter);
 const allowedStatuses = ["draft", "open", "paused", "closed", "published"];
 
 async function getRecruiterProfileId(userId) {
-  const result = await pool.query(
-    "SELECT recruiter_id FROM recruiter_profiles WHERE user_id = $1",
-    [userId]
-  );
-  return result.rows[0]?.recruiter_id || null;
+  const { data, error } = await supabase
+    .from("recruiter_profiles")
+    .select("recruiter_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.recruiter_id ?? null;
 }
 
 async function assertJobOwnership(jobId, recruiterId) {
-  const result = await pool.query(
-    "SELECT job_id FROM job_postings WHERE job_id = $1 AND recruiter_id = $2",
-    [jobId, recruiterId]
-  );
-  return result.rows.length > 0;
+  const { data, error } = await supabase
+    .from("job_postings")
+    .select("job_id")
+    .eq("job_id", jobId)
+    .eq("recruiter_id", recruiterId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
 }
 
 function parseNullableNumber(value) {
@@ -39,20 +52,23 @@ router.get("/", async (req, res) => {
       return res.status(409).json({ message: "Create a recruiter profile before listing jobs" });
     }
 
-    const result = await pool.query(
-      `SELECT jp.*, COALESCE(app_counts.count, 0) AS applications_count
-       FROM job_postings jp
-       LEFT JOIN (
-         SELECT job_id, COUNT(*) AS count
-         FROM job_applications
-         GROUP BY job_id
-       ) AS app_counts ON app_counts.job_id = jp.job_id
-       WHERE jp.recruiter_id = $1
-       ORDER BY jp.created_at DESC`,
-      [recruiterId]
-    );
+    const { data: jobs, error } = await supabase
+      .from("job_postings")
+      .select("*, job_applications(count)")
+      .eq("recruiter_id", recruiterId)
+      .order("created_at", { ascending: false });
 
-    return res.status(200).json({ message: "Jobs retrieved", data: result.rows });
+    if (error) {
+      throw error;
+    }
+
+    const normalized = (jobs || []).map((job) => {
+      const applicationsCount = job.job_applications?.[0]?.count ?? 0;
+      const { job_applications, ...rest } = job;
+      return { ...rest, applications_count: applicationsCount };
+    });
+
+    return res.status(200).json({ message: "Jobs retrieved", data: normalized });
   } catch (error) {
     console.error("Error listing jobs:", error);
     return res.status(500).json({ message: "Failed to fetch jobs" });
@@ -87,35 +103,32 @@ router.post("/", async (req, res) => {
     const normalizedStatus = status && allowedStatuses.includes(status) ? status : "draft";
     const cleanOpenings = parseInt(openings, 10);
 
-    const insertQuery = `
-      INSERT INTO job_postings (
-        recruiter_id, title, employment_type, job_function, location,
-        openings, salary_ctc, stipend_amount, compensation_notes, description,
-        application_deadline, status
-      ) VALUES (
-        $1, $2, $3, $4, $5,
-        $6, $7, $8, $9, $10,
-        $11, $12
-      ) RETURNING *;
-    `;
-
-    const values = [
-      recruiterId,
+    const payload = {
+      recruiter_id: recruiterId,
       title,
-      employment_type || null,
-      job_function || null,
+      employment_type: employment_type || null,
+      job_function: job_function || null,
       location,
-      Number.isNaN(cleanOpenings) || cleanOpenings <= 0 ? 1 : cleanOpenings,
-      parseNullableNumber(salary_ctc),
-      parseNullableNumber(stipend_amount),
-      compensation_notes || null,
+      openings: Number.isNaN(cleanOpenings) || cleanOpenings <= 0 ? 1 : cleanOpenings,
+      salary_ctc: parseNullableNumber(salary_ctc),
+      stipend_amount: parseNullableNumber(stipend_amount),
+      compensation_notes: compensation_notes || null,
       description,
-      application_deadline || null,
-      normalizedStatus,
-    ];
+      application_deadline: application_deadline || null,
+      status: normalizedStatus,
+    };
 
-    const result = await pool.query(insertQuery, values);
-    return res.status(201).json({ message: "Job created", data: result.rows[0] });
+    const { data, error } = await supabase
+      .from("job_postings")
+      .insert([payload])
+      .select("*")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return res.status(201).json({ message: "Job created", data });
   } catch (error) {
     console.error("Error creating job:", error);
     return res.status(500).json({ message: "Failed to create job" });
@@ -130,16 +143,22 @@ router.get("/:jobId", async (req, res) => {
     }
 
     const { jobId } = req.params;
-    const result = await pool.query(
-      "SELECT * FROM job_postings WHERE job_id = $1 AND recruiter_id = $2",
-      [jobId, recruiterId]
-    );
+    const { data, error } = await supabase
+      .from("job_postings")
+      .select("*")
+      .eq("job_id", jobId)
+      .eq("recruiter_id", recruiterId)
+      .maybeSingle();
 
-    if (result.rows.length === 0) {
+    if (error) {
+      throw error;
+    }
+
+    if (!data) {
       return res.status(404).json({ message: "Job not found" });
     }
 
-    return res.status(200).json({ message: "Job retrieved", data: result.rows[0] });
+    return res.status(200).json({ message: "Job retrieved", data });
   } catch (error) {
     console.error("Error fetching job:", error);
     return res.status(500).json({ message: "Failed to fetch job" });
@@ -202,23 +221,37 @@ router.put("/:jobId", async (req, res) => {
       RETURNING *;
     `;
 
-    const values = [
-      fields.title,
-      fields.employment_type || null,
-      fields.job_function || null,
-      fields.location,
-      Number.isNaN(cleanOpenings) || cleanOpenings <= 0 ? 1 : cleanOpenings,
-      fields.salary_ctc,
-      fields.stipend_amount,
-      fields.compensation_notes || null,
-      fields.description,
-      fields.application_deadline || null,
-      fields.status || "draft",
-      jobId,
-    ];
+    const updatePayload = {
+      title: fields.title,
+      employment_type: fields.employment_type || null,
+      job_function: fields.job_function || null,
+      location: fields.location,
+      openings: Number.isNaN(cleanOpenings) || cleanOpenings <= 0 ? 1 : cleanOpenings,
+      salary_ctc: fields.salary_ctc,
+      stipend_amount: fields.stipend_amount,
+      compensation_notes: fields.compensation_notes || null,
+      description: fields.description,
+      application_deadline: fields.application_deadline || null,
+      status: fields.status || "draft",
+      updated_at: new Date().toISOString(),
+    };
 
-    const result = await pool.query(updateQuery, values);
-    return res.status(200).json({ message: "Job updated", data: result.rows[0] });
+    const { data, error } = await supabase
+      .from("job_postings")
+      .update(updatePayload)
+      .eq("job_id", jobId)
+      .eq("recruiter_id", recruiterId)
+      .select("*")
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      throw error;
+    }
+
+    return res.status(200).json({ message: "Job updated", data });
   } catch (error) {
     console.error("Error updating job:", error);
     return res.status(500).json({ message: "Failed to update job" });
@@ -244,12 +277,22 @@ router.patch("/:jobId/status", async (req, res) => {
       return res.status(404).json({ message: "Job not found" });
     }
 
-    const result = await pool.query(
-      "UPDATE job_postings SET status = $1, updated_at = NOW() WHERE job_id = $2 RETURNING *",
-      [status, jobId]
-    );
+    const { data, error } = await supabase
+      .from("job_postings")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("job_id", jobId)
+      .eq("recruiter_id", recruiterId)
+      .select("*")
+      .single();
 
-    return res.status(200).json({ message: "Job status updated", data: result.rows[0] });
+    if (error) {
+      if (error.code === "PGRST116") {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      throw error;
+    }
+
+    return res.status(200).json({ message: "Job status updated", data });
   } catch (error) {
     console.error("Error updating job status:", error);
     return res.status(500).json({ message: "Failed to update status" });
@@ -269,17 +312,42 @@ router.get("/:jobId/applications", async (req, res) => {
       return res.status(404).json({ message: "Job not found" });
     }
 
-    const result = await pool.query(
-      `SELECT ja.*, pd.first_name, pd.last_name, pd.personal_email, pd.phone_number,
-              pd.institute_roll_no
-       FROM job_applications ja
-       JOIN personal_details pd ON pd.user_id = ja.student_user_id
-       WHERE ja.job_id = $1
-       ORDER BY ja.created_at DESC`,
-      [jobId]
-    );
+    const { data: applications, error } = await supabase
+      .from("job_applications")
+      .select(
+        `*, personal_details:student_user_id (
+          first_name,
+          last_name,
+          personal_email,
+          phone_number,
+          institute_roll_no
+        )`
+      )
+      .eq("job_id", jobId)
+      .order("created_at", { ascending: false });
 
-    return res.status(200).json({ message: "Applications retrieved", data: result.rows });
+    if (error) {
+      throw error;
+    }
+
+    const normalized = (applications || []).map((application) => {
+      const personal = Array.isArray(application.personal_details)
+        ? application.personal_details[0]
+        : application.personal_details;
+
+      const { personal_details, ...rest } = application;
+
+      return {
+        ...rest,
+        first_name: personal?.first_name ?? null,
+        last_name: personal?.last_name ?? null,
+        personal_email: personal?.personal_email ?? null,
+        phone_number: personal?.phone_number ?? null,
+        institute_roll_no: personal?.institute_roll_no ?? null,
+      };
+    });
+
+    return res.status(200).json({ message: "Applications retrieved", data: normalized });
   } catch (error) {
     console.error("Error fetching applications:", error);
     return res.status(500).json({ message: "Failed to fetch applications" });
@@ -312,12 +380,17 @@ router.post("/:jobId/applications", async (req, res) => {
       return res.status(400).json({ message: "student_user_id is required" });
     }
 
-    const candidateResult = await pool.query(
-      "SELECT user_id FROM personal_details WHERE user_id = $1",
-      [student_user_id]
-    );
+    const { data: candidate, error: candidateError } = await supabase
+      .from("personal_details")
+      .select("user_id")
+      .eq("user_id", student_user_id)
+      .maybeSingle();
 
-    if (candidateResult.rows.length === 0) {
+    if (candidateError) {
+      throw candidateError;
+    }
+
+    if (!candidate) {
       return res.status(404).json({ message: "Student profile not found" });
     }
 
@@ -325,31 +398,28 @@ router.post("/:jobId/applications", async (req, res) => {
       ? status
       : "pending";
 
-    const insertQuery = `
-      INSERT INTO job_applications (
-        job_id, student_user_id, resume_url, cover_letter, current_stage, status, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (job_id, student_user_id) DO UPDATE SET
-        resume_url = EXCLUDED.resume_url,
-        cover_letter = EXCLUDED.cover_letter,
-        current_stage = EXCLUDED.current_stage,
-        status = EXCLUDED.status,
-        notes = EXCLUDED.notes,
-        updated_at = NOW()
-      RETURNING *;
-    `;
-
-    const result = await pool.query(insertQuery, [
-      jobId,
+    const upsertPayload = {
+      job_id: jobId,
       student_user_id,
-      resume_url || null,
-      cover_letter || null,
-      current_stage || "Application Review",
-      normalizedStatus,
-      notes || null,
-    ]);
+      resume_url: resume_url || null,
+      cover_letter: cover_letter || null,
+      current_stage: current_stage || "Application Review",
+      status: normalizedStatus,
+      notes: notes || null,
+      updated_at: new Date().toISOString(),
+    };
 
-    return res.status(201).json({ message: "Application saved", data: result.rows[0] });
+    const { data, error } = await supabase
+      .from("job_applications")
+      .upsert([upsertPayload], { onConflict: "job_id,student_user_id" })
+      .select("*")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return res.status(201).json({ message: "Application saved", data });
   } catch (error) {
     console.error("Error saving application:", error);
     return res.status(500).json({ message: "Failed to save application" });
@@ -371,46 +441,46 @@ router.patch("/:jobId/applications/:applicationId", async (req, res) => {
 
     const { current_stage, status, notes } = req.body;
 
-    const updates = [];
-    const values = [];
+  const allowedApplicationStatuses = ["pending", "in_progress", "rejected", "hired"];
+  const updates = {};
 
     if (current_stage) {
-      updates.push(`current_stage = $${updates.length + 1}`);
-      values.push(current_stage);
+      updates.current_stage = current_stage;
     }
 
     if (status) {
-      const allowed = ["pending", "in_progress", "rejected", "hired"];
-      if (!allowed.includes(status)) {
+      if (!allowedApplicationStatuses.includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
-      updates.push(`status = $${updates.length + 1}`);
-      values.push(status);
+      updates.status = status;
     }
 
     if (notes !== undefined) {
-      updates.push(`notes = $${updates.length + 1}`);
-      values.push(notes);
+      updates.notes = notes;
     }
 
-    if (updates.length === 0) {
+    if (Object.keys(updates).length === 0) {
       return res.status(400).json({ message: "No fields to update" });
     }
 
-    const query = `
-      UPDATE job_applications
-      SET ${updates.join(", ")}, updated_at = NOW()
-      WHERE application_id = $${updates.length + 1} AND job_id = $${updates.length + 2}
-      RETURNING *;
-    `;
+    updates.updated_at = new Date().toISOString();
 
-    const result = await pool.query(query, [...values, applicationId, jobId]);
+    const { data, error } = await supabase
+      .from("job_applications")
+      .update(updates)
+      .eq("application_id", applicationId)
+      .eq("job_id", jobId)
+      .select("*")
+      .single();
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Application not found" });
+    if (error) {
+      if (error.code === "PGRST116") {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      throw error;
     }
 
-    return res.status(200).json({ message: "Application updated", data: result.rows[0] });
+    return res.status(200).json({ message: "Application updated", data });
   } catch (error) {
     console.error("Error updating application:", error);
     return res.status(500).json({ message: "Failed to update application" });
@@ -430,21 +500,32 @@ router.get("/:jobId/applications/:applicationId/screenings", async (req, res) =>
       return res.status(404).json({ message: "Job not found" });
     }
 
-    const applicationResult = await pool.query(
-      "SELECT application_id FROM job_applications WHERE application_id = $1 AND job_id = $2",
-      [applicationId, jobId]
-    );
+    const { data: application, error: applicationError } = await supabase
+      .from("job_applications")
+      .select("application_id")
+      .eq("application_id", applicationId)
+      .eq("job_id", jobId)
+      .maybeSingle();
 
-    if (applicationResult.rows.length === 0) {
+    if (applicationError) {
+      throw applicationError;
+    }
+
+    if (!application) {
       return res.status(404).json({ message: "Application not found" });
     }
 
-    const screenings = await pool.query(
-      "SELECT * FROM application_screenings WHERE application_id = $1 ORDER BY created_at DESC",
-      [applicationId]
-    );
+    const { data: screenings, error } = await supabase
+      .from("application_screenings")
+      .select("*")
+      .eq("application_id", applicationId)
+      .order("created_at", { ascending: false });
 
-    return res.status(200).json({ message: "Screenings retrieved", data: screenings.rows });
+    if (error) {
+      throw error;
+    }
+
+    return res.status(200).json({ message: "Screenings retrieved", data: screenings || [] });
   } catch (error) {
     console.error("Error fetching screenings:", error);
     return res.status(500).json({ message: "Failed to fetch screenings" });
@@ -464,12 +545,18 @@ router.post("/:jobId/applications/:applicationId/screenings", async (req, res) =
       return res.status(404).json({ message: "Job not found" });
     }
 
-    const applicationResult = await pool.query(
-      "SELECT application_id FROM job_applications WHERE application_id = $1 AND job_id = $2",
-      [applicationId, jobId]
-    );
+    const { data: application, error: applicationError } = await supabase
+      .from("job_applications")
+      .select("application_id")
+      .eq("application_id", applicationId)
+      .eq("job_id", jobId)
+      .maybeSingle();
 
-    if (applicationResult.rows.length === 0) {
+    if (applicationError) {
+      throw applicationError;
+    }
+
+    if (!application) {
       return res.status(404).json({ message: "Application not found" });
     }
 
@@ -483,21 +570,25 @@ router.post("/:jobId/applications/:applicationId/screenings", async (req, res) =
       return res.status(400).json({ message: "Invalid outcome" });
     }
 
-    const insertQuery = `
-      INSERT INTO application_screenings (application_id, stage_name, outcome, scheduled_at, notes)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *;
-    `;
+    const { data, error } = await supabase
+      .from("application_screenings")
+      .insert([
+        {
+          application_id: applicationId,
+          stage_name,
+          outcome: outcome || "pending",
+          scheduled_at: scheduled_at || null,
+          notes: notes || null,
+        },
+      ])
+      .select("*")
+      .single();
 
-    const result = await pool.query(insertQuery, [
-      applicationId,
-      stage_name,
-      outcome || "pending",
-      scheduled_at || null,
-      notes || null,
-    ]);
+    if (error) {
+      throw error;
+    }
 
-    return res.status(201).json({ message: "Screening recorded", data: result.rows[0] });
+    return res.status(201).json({ message: "Screening recorded", data });
   } catch (error) {
     console.error("Error recording screening:", error);
     return res.status(500).json({ message: "Failed to record screening" });

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/authenticationToken');
-const pool = require('../config/db');
+const supabase = require('../config/supabaseClient');
 
 router.post('/', authenticateToken, async (req, res) => {
     const userId = req.user.id; // From JWT
@@ -41,36 +41,47 @@ router.post('/', authenticateToken, async (req, res) => {
 
     try {
         // Verify personal details exist (since user_id FK references personal_details)
-        const personalExists = await pool.query(
-            'SELECT 1 FROM personal_details WHERE user_id = $1',
-            [userId]
-        );
+        const { data: personalExists, error: personalError } = await supabase
+            .from('personal_details')
+            .select('user_id')
+            .eq('user_id', userId)
+            .maybeSingle();
 
-        if (personalExists.rows.length === 0) {
+        if (personalError) {
+            throw personalError;
+        }
+
+        if (!personalExists) {
             return res.status(403).json({
                 error: 'Complete profile setup first',
                 solution: 'Submit personal details at /api/personal-details-form'
             });
         }
 
-        // Insert internship record
-        const result = await pool.query(
-            `INSERT INTO internships (
-                user_id, company_name, job_title, 
-                location, company_sector, start_date, 
-                end_date, stipend_salary
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             RETURNING internship_id`,
-            [
-                userId, company_name, job_title, 
-                location, company_sector, start_date, 
-                end_date, stipend_salary
-            ]
-        );
+        const { data, error } = await supabase
+            .from('internships')
+            .insert([
+                {
+                    user_id: userId,
+                    company_name,
+                    job_title,
+                    location,
+                    company_sector,
+                    start_date,
+                    end_date,
+                    stipend_salary: stipend_salary ?? null,
+                },
+            ])
+            .select('internship_id')
+            .single();
+
+        if (error) {
+            throw error;
+        }
 
         return res.status(201).json({
             message: 'Internship record created',
-            internship_id: result.rows[0].internship_id,
+            internship_id: data.internship_id,
             user_id: userId
         });
 

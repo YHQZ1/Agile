@@ -28,13 +28,13 @@ const LandingPage = ({ isLoggedIn, userType }) => {
     }
   };
 
-  // const handleRecruiterClick = () => {
-  //   if (isLoggedIn && userType === 'recruiter') {
-  //     navigate("/recruiter-dashboard");
-  //   } else {
-  //     navigate("/auth", { state: { userType: "recruiter" } });
-  //   }
-  // };
+  const handleRecruiterClick = () => {
+    if (isLoggedIn && userType === 'recruiter') {
+      navigate("/recruiter-dashboard");
+    } else {
+      navigate("/auth", { state: { userType: "recruiter" } });
+    }
+  };
   
   const scrollToFeatures = () => {
     featuresRef.current?.scrollIntoView({ behavior: 'smooth' });

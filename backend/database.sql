@@ -19,6 +19,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Helper to safely read a BIGINT claim from the active JWT (returns NULL if absent)
+CREATE OR REPLACE FUNCTION public.jwt_claim_bigint(claim_name TEXT)
+RETURNS BIGINT AS $$
+DECLARE
+    raw_claims TEXT;
+    claim_value TEXT;
+BEGIN
+    raw_claims := current_setting('request.jwt.claims', true);
+
+    IF raw_claims IS NULL OR raw_claims = '' THEN
+        RETURN NULL;
+    END IF;
+
+    claim_value := (raw_claims::jsonb ->> claim_name);
+
+    IF claim_value IS NULL OR claim_value !~ '^\d+$' THEN
+        RETURN NULL;
+    END IF;
+
+    RETURN claim_value::BIGINT;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
 -- ============================================================================
 -- Authentication & Core Profile
 -- ============================================================================
@@ -324,17 +347,51 @@ ALTER TABLE public.job_postings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.application_screenings ENABLE ROW LEVEL SECURITY;
 
+-- =========================================================================
+-- Row Level Security Policies
+-- =========================================================================
+
+-- Allow a user (based on JWT `id` claim) to read their own personal details
+DROP POLICY IF EXISTS personal_details_select_self ON public.personal_details;
+CREATE POLICY personal_details_select_self
+ON public.personal_details
+FOR SELECT
+USING (public.jwt_claim_bigint('id') = user_id);
+
+-- Allow a user to insert their own personal details row
+DROP POLICY IF EXISTS personal_details_insert_self ON public.personal_details;
+CREATE POLICY personal_details_insert_self
+ON public.personal_details
+FOR INSERT
+WITH CHECK (public.jwt_claim_bigint('id') = user_id);
+
+-- Allow a user to update only their personal details row
+DROP POLICY IF EXISTS personal_details_update_self ON public.personal_details;
+CREATE POLICY personal_details_update_self
+ON public.personal_details
+FOR UPDATE
+USING (public.jwt_claim_bigint('id') = user_id)
+WITH CHECK (public.jwt_claim_bigint('id') = user_id);
+
 -- Note: Define granular RLS policies per table to suit application security needs.
 
 -- ============================================================================
 -- Optional Content Maintenance (legacy compatibility)
 -- ============================================================================
 
-ALTER TABLE IF EXISTS public.content ADD COLUMN IF NOT EXISTS categories TEXT[] DEFAULT ARRAY[]::TEXT[];
-CREATE INDEX IF NOT EXISTS idx_content_categories ON public.content USING GIN (categories);
-UPDATE public.content
-SET categories = ARRAY[type]
-WHERE categories IS NULL OR array_length(categories, 1) IS NULL;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'content'
+    ) THEN
+    EXECUTE 'ALTER TABLE public.content ADD COLUMN IF NOT EXISTS categories TEXT[] DEFAULT ARRAY[]::TEXT[]';
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_content_categories ON public.content USING GIN (categories)';
+    EXECUTE 'UPDATE public.content SET categories = ARRAY[type] WHERE categories IS NULL OR array_length(categories, 1) IS NULL';
+    END IF;
+END;
+$$;
 
 DROP TABLE IF EXISTS public.messages;
 

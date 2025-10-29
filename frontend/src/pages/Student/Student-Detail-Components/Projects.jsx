@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { BACKEND_URL } from '../../../config/env';
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+const BASE_URL = BACKEND_URL;
 
 const Projects = ({ projects, handleInputChange, addItem, removeItem, onSave }) => {
   const [isLoading, setIsLoading] = useState(false);

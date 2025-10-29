@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import '../../styles/Recruiter/PostJobs.css';
+import { BACKEND_URL } from '../../config/env';
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001';
+const API_BASE = BACKEND_URL;
 
 const positionTypes = ['Internship', 'Full-Time', 'Contract', 'Part-Time'];
 const jobFunctions = [

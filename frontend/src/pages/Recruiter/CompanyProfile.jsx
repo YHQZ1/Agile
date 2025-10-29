@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import "../../styles/Recruiter/CompanyProfile.css";
+import { BACKEND_URL } from '../../config/env';
 
 // Constants that could be moved to a separate config file
 const INDUSTRIES = ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Retail', 'Education', 'Other'];
 const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Other'];
 const COMPANY_SIZES = ['Small', 'Medium', 'Large', 'Enterprise'];
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+const API_BASE = BACKEND_URL;
 
 const mapProfileToFormState = (profile) => ({
   companyName: profile?.company_name || '',

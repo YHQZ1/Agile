@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/authenticationToken');
-const pool = require('../config/db');
+const supabase = require('../config/supabaseClient');
+const { NODE_ENV } = require('../config/env');
 
 router.post('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { project_title, description, tech_stack, project_link, role } = req.body;
-    if (process.env.NODE_ENV !== 'production') {
+    if (NODE_ENV !== 'production') {
         console.log("Received project payload:", { project_title, description, tech_stack, project_link, role });
     }
 
@@ -17,31 +18,42 @@ router.post('/', authenticateToken, async (req, res) => {
 
     try {
         // Verify user exists (since there's a foreign key constraint)
-        const userCheck = await pool.query(
-            'SELECT 1 FROM personal_details WHERE user_id = $1', 
-            [userId]
-        );
-        if (userCheck.rows.length === 0) {
+        const { data: userCheck, error: userCheckError } = await supabase
+            .from('personal_details')
+            .select('user_id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (userCheckError) {
+            throw userCheckError;
+        }
+
+        if (!userCheck) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const query = `
-            INSERT INTO projects (
-                user_id, project_title, description, 
-                tech_stack, project_link, role
-            ) VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING project_id
-        `;
-        const values = [
-            userId, project_title, description, 
-            tech_stack, project_link, role
-        ];
+        const { data, error } = await supabase
+            .from('projects')
+            .insert([
+                {
+                    user_id: userId,
+                    project_title,
+                    description,
+                    tech_stack,
+                    project_link: project_link || null,
+                    role: role || null,
+                },
+            ])
+            .select('project_id')
+            .single();
 
-        const result = await pool.query(query, values);
+        if (error) {
+            throw error;
+        }
 
         return res.status(201).json({
             message: 'Project saved successfully',
-            project_id: result.rows[0].project_id
+            project_id: data.project_id
         });
     } catch (error) {
         console.error('Error saving project:', error);

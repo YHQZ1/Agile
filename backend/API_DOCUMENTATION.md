@@ -167,7 +167,9 @@ Common HTTP status codes used:
 - CORS allowlist comes from `FRONTEND_URL`, `ATS_URL`, localhost, and any `*.vercel.app` domains.
 
 ## Environment Variables
-- `SUPABASE_DB_URL` – Postgres connection string (Supabase).
+- `SUPABASE_URL` – Supabase project URL.
+- `SUPABASE_SERVICE_ROLE_KEY` – privileged key for server-side access (preferred).
+- `SUPABASE_ANON_KEY` – fallback key with row-level policies enforced.
 - `JWT_SECRET` – symmetric key for signing JWTs.
 - `NODE_ENV` – `development` or `production`; controls cookie settings.
 - `FRONTEND_URL` – absolute URL of the Vercel deployment (used for strict CORS).
@@ -175,7 +177,7 @@ Common HTTP status codes used:
 
 ## Running Locally
 1. Load the schema defined in `backend/database.sql` into Supabase.
-2. Copy environment variables (`SUPABASE_DB_URL`, `JWT_SECRET`, `NODE_ENV`, `FRONTEND_URL`, `ATS_URL`) into `.env`.
+2. Copy environment variables (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `NODE_ENV`, `FRONTEND_URL`, `ATS_URL`) into `.env`.
 3. `npm install` inside `backend/`.
 4. `node server.js` (or `nodemon`).
 

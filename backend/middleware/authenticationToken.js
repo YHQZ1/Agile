@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
-const pool = require("../config/db");
+const supabase = require("../config/supabaseClient");
+const { JWT_SECRET } = require("../config/env");
 
 const authenticateToken = async (req, res, next) => {
   // Extract token from cookies or Authorization header
@@ -10,15 +11,23 @@ const authenticateToken = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = jwt.verify(token, JWT_SECRET);
 
     if (!decoded.role) {
       try {
-        const result = await pool.query(
-          "SELECT role FROM authentication WHERE id = $1",
-          [decoded.id]
-        );
-        decoded.role = result.rows[0]?.role;
+        const { data: authRow, error: lookupError } = await supabase
+          .from("authentication")
+          .select("role")
+          .eq("id", decoded.id)
+          .maybeSingle();
+
+        if (lookupError) {
+          console.error("Error resolving user role:", lookupError);
+        }
+
+        if (authRow?.role) {
+          decoded.role = authRow.role;
+        }
       } catch (lookupError) {
         console.error("Error resolving user role:", lookupError);
       }

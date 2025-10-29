@@ -1,40 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../../middleware/authenticationToken');
-const pool = require('../../config/db');
+const supabase = require('../../config/supabaseClient');
 
 // GET accomplishments for authenticated user
 router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        const result = await pool.query(
-            `SELECT 
-                accomplishment_id,
-                title, 
-                institution,
-                type,
-                description,
-                accomplishment_date,
-                rank,
-                user_id
-             FROM accomplishments 
-             WHERE user_id = $1`,
-            [userId]
-        );
+        const { data, error } = await supabase
+            .from('accomplishments')
+            .select('accomplishment_id, title, institution, type, description, accomplishment_date, rank, user_id')
+            .eq('user_id', userId)
+            .order('accomplishment_date', { ascending: false, nullsFirst: false });
 
-        if (result.rows.length === 0) {
+        if (error) {
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
             return res.status(404).json({
                 message: 'Accomplishments not found',
                 solution: 'Submit your accomplishments first'
             });
         }
 
-        // Format dates for better readability
-        const accomplishments = result.rows.map(accomplishment => ({
+        const accomplishments = data.map(accomplishment => ({
             ...accomplishment,
             accomplishment_date: accomplishment.accomplishment_date ? 
-                accomplishment.accomplishment_date.toISOString().split('T')[0] : null
+                accomplishment.accomplishment_date.split('T')[0] : null
         }));
 
         res.status(200).json({
@@ -57,32 +51,26 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     const requestedUserId = req.params.userId;
 
     try {
-        const result = await pool.query(
-            `SELECT 
-                accomplishment_id,
-                title, 
-                institution,
-                type,
-                description,
-                accomplishment_date,
-                rank,
-                user_id
-             FROM accomplishments 
-             WHERE user_id = $1`,
-            [requestedUserId]
-        );
+        const { data, error } = await supabase
+            .from('accomplishments')
+            .select('accomplishment_id, title, institution, type, description, accomplishment_date, rank, user_id')
+            .eq('user_id', requestedUserId)
+            .order('accomplishment_date', { ascending: false, nullsFirst: false });
 
-        if (result.rows.length === 0) {
+        if (error) {
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
             return res.status(404).json({
                 message: 'Accomplishments not found for requested user'
             });
         }
 
-        // Format dates for better readability
-        const accomplishments = result.rows.map(accomplishment => ({
+        const accomplishments = data.map(accomplishment => ({
             ...accomplishment,
             accomplishment_date: accomplishment.accomplishment_date ? 
-                accomplishment.accomplishment_date.toISOString().split('T')[0] : null
+                accomplishment.accomplishment_date.split('T')[0] : null
         }));
 
         res.status(200).json({

@@ -1,4 +1,9 @@
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+import { BACKEND_URL } from "../config/env";
+
+export const TEST_EMAIL = "testuser@sitpune.edu.in";
+export const TEST_PASSWORD = "TestPassword123!";
+
+const BASE_URL = BACKEND_URL;
 
 export const login = async ({ email, password }) => {
   const response = await fetch(`${BASE_URL}/api/auth/login`, {
@@ -63,4 +68,9 @@ export const verifyToken = async () => {
 export const logout = async () => {
   // Clearing cookie requires backend support; until endpoint exists just return.
   return Promise.resolve();
+};
+
+// Helper to create test user in the database
+export const createTestUser = async () => {
+  return await signup({ email: TEST_EMAIL, password: TEST_PASSWORD });
 };

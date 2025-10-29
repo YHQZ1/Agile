@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import '../../styles/Recruiter/RecruiterDashboard.css';
+import { BACKEND_URL } from '../../config/env';
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001';
+const API_BASE = BACKEND_URL;
 const stagePalette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'];
 
 const CandidatePipelineCard = ({ pipeline }) => {

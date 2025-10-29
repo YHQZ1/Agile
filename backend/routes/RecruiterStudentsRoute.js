@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const pool = require("../config/db");
+const supabase = require("../config/supabaseClient");
 const authenticateToken = require("../middleware/authenticationToken");
 const requireRecruiter = require("../middleware/requireRecruiter");
 
@@ -10,21 +10,25 @@ router.get("/", async (req, res) => {
   const { search } = req.query;
 
   try {
-    let query = `
-      SELECT user_id, first_name, last_name, institute_roll_no, personal_email, phone_number
-      FROM personal_details
-    `;
-    const values = [];
+    let query = supabase
+      .from("personal_details")
+      .select("user_id, first_name, last_name, institute_roll_no, personal_email, phone_number")
+      .order("first_name", { ascending: true })
+      .order("last_name", { ascending: true });
 
     if (search) {
-      query += ` WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR institute_roll_no ILIKE $1`;
-      values.push(`%${search}%`);
+      query = query.or(
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,institute_roll_no.ilike.%${search}%`
+      );
     }
 
-    query += " ORDER BY first_name ASC, last_name ASC";
+    const { data, error } = await query;
 
-    const result = await pool.query(query, values);
-    return res.status(200).json({ message: "Students retrieved", data: result.rows });
+    if (error) {
+      throw error;
+    }
+
+    return res.status(200).json({ message: "Students retrieved", data: data || [] });
   } catch (error) {
     console.error("Error retrieving students:", error);
     return res.status(500).json({ message: "Failed to fetch students" });
@@ -35,36 +39,85 @@ router.get("/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const personal = await pool.query(
-      "SELECT * FROM personal_details WHERE user_id = $1",
-      [userId]
-    );
+    const { data: personal, error: personalError } = await supabase
+      .from("personal_details")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    if (personal.rows.length === 0) {
+    if (personalError) {
+      throw personalError;
+    }
+
+    if (!personal) {
       return res.status(404).json({ message: "Student profile not found" });
     }
 
     const [internships, volunteering, skills, projects, accomplishments, extraCurricular, competitions] = await Promise.all([
-      pool.query("SELECT * FROM internships WHERE user_id = $1 ORDER BY start_date DESC", [userId]),
-      pool.query("SELECT * FROM volunteering WHERE user_id = $1 ORDER BY start_date DESC", [userId]),
-      pool.query("SELECT * FROM skills WHERE user_id = $1 ORDER BY created_at DESC", [userId]),
-      pool.query("SELECT * FROM projects WHERE user_id = $1 ORDER BY created_at DESC", [userId]),
-      pool.query("SELECT * FROM accomplishments WHERE user_id = $1 ORDER BY accomplishment_date DESC NULLS LAST", [userId]),
-      pool.query("SELECT * FROM extra_curricular WHERE user_id = $1 ORDER BY created_at DESC", [userId]),
-      pool.query("SELECT * FROM competition_events WHERE user_id = $1 ORDER BY event_date DESC", [userId]),
+      supabase
+        .from("internships")
+        .select("*")
+        .eq("user_id", userId)
+        .order("start_date", { ascending: false }),
+      supabase
+        .from("volunteering")
+        .select("*")
+        .eq("user_id", userId)
+        .order("start_date", { ascending: false }),
+      supabase
+        .from("skills")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("accomplishments")
+        .select("*")
+        .eq("user_id", userId)
+        .order("accomplishment_date", { ascending: false, nullsFirst: false }),
+      supabase
+        .from("extra_curricular")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("competition_events")
+        .select("*")
+        .eq("user_id", userId)
+        .order("event_date", { ascending: false }),
     ]);
+
+    const resultSets = [
+      internships,
+      volunteering,
+      skills,
+      projects,
+      accomplishments,
+      extraCurricular,
+      competitions,
+    ];
+
+    for (const response of resultSets) {
+      if (response.error) {
+        throw response.error;
+      }
+    }
 
     return res.status(200).json({
       message: "Student profile retrieved",
       data: {
-        personal: personal.rows[0],
-        internships: internships.rows,
-        volunteering: volunteering.rows,
-        skills: skills.rows,
-        projects: projects.rows,
-        accomplishments: accomplishments.rows,
-        extra_curricular: extraCurricular.rows,
-        competitions: competitions.rows,
+        personal,
+        internships: internships.data || [],
+        volunteering: volunteering.data || [],
+        skills: skills.data || [],
+        projects: projects.data || [],
+        accomplishments: accomplishments.data || [],
+        extra_curricular: extraCurricular.data || [],
+        competitions: competitions.data || [],
       },
     });
   } catch (error) {

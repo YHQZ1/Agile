@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/authenticationToken');
-const pool = require('../config/db');
+const supabase = require('../config/supabaseClient');
 
 router.post('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
@@ -27,43 +27,36 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     try {
-        const query = `
-            INSERT INTO personal_details (
-                user_id, first_name, last_name, dob, gender,
-                institute_roll_no, personal_email, phone_number
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (user_id) DO UPDATE SET
-                first_name = EXCLUDED.first_name,
-                last_name = EXCLUDED.last_name,
-                dob = EXCLUDED.dob,
-                gender = EXCLUDED.gender,
-                institute_roll_no = EXCLUDED.institute_roll_no,
-                personal_email = EXCLUDED.personal_email,
-                phone_number = EXCLUDED.phone_number
-            RETURNING user_id
-        `;
-        const values = [
-            userId,
+        const upsertPayload = {
+            user_id: userId,
             first_name,
             last_name,
             dob,
-            gender,
+            gender: gender || null,
             institute_roll_no,
-            personal_email,
+            personal_email: personal_email || null,
             phone_number
-        ];
+        };
 
-        const result = await pool.query(query, values);
+        const { data, error } = await supabase
+            .from('personal_details')
+            .upsert([upsertPayload], { onConflict: 'user_id' })
+            .select('user_id')
+            .single();
+
+        if (error) {
+            throw error;
+        }
 
         return res.status(201).json({
             message: 'Personal information saved successfully',
-            user_id: result.rows[0].user_id
+            user_id: data.user_id
         });
     } catch (error) {
         console.error('Error saving personal information:', error);
         
         // Handle unique constraint violations
-        if (error.code === '23505') {
+    if (error.code === '23505') {
             if (error.constraint === 'personal_details_institute_roll_no_key') {
                 return res.status(400).json({ error: 'Institute roll number already exists' });
             }

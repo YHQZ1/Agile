@@ -3,8 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/Auth.css';
 import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
+import { BACKEND_URL } from '../config/env';
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+import { TEST_EMAIL, TEST_PASSWORD, createTestUser } from '../api/Auth';
+
+const BASE_URL = BACKEND_URL;
 
 const Auth = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -15,6 +18,17 @@ const Auth = ({ onLogin }) => {
   const [signupData, setSignupData] = useState({ email: '', password: '', confirmPassword: '', terms: false });
   const [errors, setErrors] = useState({ password: false, confirmPassword: false, email: false, form: null });
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleTestLogin = async () => {
+    setLoginData({ email: TEST_EMAIL, password: TEST_PASSWORD, remember: false });
+    setUserType('student');
+    setIsLoading(true);
+    try {
+      await createTestUser();
+    } catch (e) {
+    }
+    setIsLoading(false);
+  };
 
   const COLLEGE_EMAIL_DOMAIN = '@sitpune.edu.in';
 
@@ -56,6 +70,19 @@ const Auth = ({ onLogin }) => {
     if (userType === 'student' && !validateEmail(loginData.email, userType)) {
       setErrors({ ...errors, email: true, form: `Please use your college email (${COLLEGE_EMAIL_DOMAIN})` });
       setIsLoading(false);
+      return;
+    }
+
+    // Bypass backend for test credentials
+    if (
+      loginData.email === TEST_EMAIL &&
+      loginData.password === TEST_PASSWORD
+    ) {
+      localStorage.setItem('isTestStudentAuthenticated', 'true');
+      setTimeout(() => {
+        setIsLoading(false);
+        navigate('/default');
+      }, 500);
       return;
     }
 
@@ -116,6 +143,20 @@ const Auth = ({ onLogin }) => {
 
     if (!passwordValid || !passwordsMatch || !termsAccepted || !emailValid) {
       setIsLoading(false);
+      return;
+    }
+    
+    if (
+      signupData.email === TEST_EMAIL &&
+      signupData.password === TEST_PASSWORD
+    ) {
+      localStorage.setItem('isTestStudentAuthenticated', 'true');
+      setTimeout(() => {
+        setIsLoading(false);
+        if (userType === 'student') {
+          navigate('/student-form');
+        }
+      }, 500);
       return;
     }
 
@@ -183,6 +224,9 @@ const Auth = ({ onLogin }) => {
               {userType === 'student' && (
                 <p className="auth-note">Students must use their college email address</p>
               )}
+                <button type="button" className="btn-auth" style={{marginTop:8}} onClick={handleTestLogin}>
+                  Use Test Credentials
+                </button>
             </div>
 
             <form onSubmit={handleLoginSubmit}>

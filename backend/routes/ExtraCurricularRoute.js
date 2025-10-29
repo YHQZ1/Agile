@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/authenticationToken');
-const pool = require('../config/db');
+const supabase = require('../config/supabaseClient');
 
 router.post('/', authenticateToken, async (req, res) => {
     const userId = req.user.id; // From JWT
@@ -17,31 +17,44 @@ router.post('/', authenticateToken, async (req, res) => {
 
     try {
         // Verify personal details exist (since user_id FK references personal_details)
-        const personalExists = await pool.query(
-            'SELECT 1 FROM personal_details WHERE user_id = $1',
-            [userId]
-        );
+        const { data: personalExists, error: personalError } = await supabase
+            .from('personal_details')
+            .select('user_id')
+            .eq('user_id', userId)
+            .maybeSingle();
 
-        if (personalExists.rows.length === 0) {
+        if (personalError) {
+            throw personalError;
+        }
+
+        if (!personalExists) {
             return res.status(403).json({
                 error: 'Complete profile setup first',
                 solution: 'Submit personal details at /api/personal-details-form'
             });
         }
 
-        // Insert with correct RETURNING clause
-        const result = await pool.query(
-            `INSERT INTO extra_curricular (
-                user_id, activity_name, role, 
-                organization, duration
-             ) VALUES ($1, $2, $3, $4, $5)
-             RETURNING extra_curricular_id`,
-            [userId, activity_name, role, organization, duration]
-        );
+        const { data, error } = await supabase
+            .from('extra_curricular')
+            .insert([
+                {
+                    user_id: userId,
+                    activity_name: activity_name || null,
+                    role: role || null,
+                    organization: organization || null,
+                    duration: duration || null,
+                },
+            ])
+            .select('extra_curricular_id')
+            .single();
+
+        if (error) {
+            throw error;
+        }
 
         return res.status(201).json({
             message: 'Extra curricular record created',
-            extra_curricular_id: result.rows[0].extra_curricular_id,
+            extra_curricular_id: data.extra_curricular_id,
             user_id: userId
         });
 

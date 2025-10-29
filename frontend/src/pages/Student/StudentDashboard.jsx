@@ -1,9 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import "../../styles/Student/StudentDashboard.css";
+import { BACKEND_URL } from '../../config/env';
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+const isTestStudentAuthenticated = localStorage.getItem('isTestStudentAuthenticated') === 'true';
+
+const BASE_URL = BACKEND_URL;
 
 export default function StudentDashboard() {
   const initialPersonalDetails = {
@@ -41,6 +45,19 @@ export default function StudentDashboard() {
   };
 
   const fetchPersonalDetails = async () => {
+    if (isTestStudentAuthenticated) {
+      setPersonalDetails({
+        firstName: 'Test',
+        lastName: 'Student',
+        email: 'testuser@sitpune.edu.in',
+        phone: '1234567890',
+        dob: '2000-01-01',
+        gender: 'Other',
+        instituteRollNo: 'SIT123456',
+        profilePicture: ''
+      });
+      return;
+    }
     try {
       const response = await axios.get(`${BASE_URL}/api/personal-information`, {
         withCredentials: true
@@ -79,6 +96,20 @@ export default function StudentDashboard() {
   };
 
   const fetchVolunteerDetails = async () => {
+    if (isTestStudentAuthenticated) {
+      setVolunteeringDetails([
+        {
+          volunteering_id: 1,
+          organization: 'Test Org',
+          location: 'Test City',
+          sector: 'Education',
+          task: 'Teaching',
+          startDate: '2024-01-01',
+          endDate: '2024-06-01'
+        }
+      ]);
+      return;
+    }
     try {
       const response = await axios.get(`${BASE_URL}/api/volunteer-information`, {
         withCredentials: true
@@ -113,6 +144,21 @@ export default function StudentDashboard() {
   };
 
   const fetchInternshipDetails = async () => {
+    if (isTestStudentAuthenticated) {
+      setInternshipDetails([
+        {
+          internship_id: 1,
+          company: 'Test Company',
+          position: 'Intern',
+          location: 'Test City',
+          sector: 'IT',
+          startDate: '2024-02-01',
+          endDate: '2024-07-01',
+          stipend: '10000'
+        }
+      ]);
+      return;
+    }
     try {
       const response = await axios.get(`${BASE_URL}/api/internship-information`, {
         withCredentials: true
@@ -148,6 +194,19 @@ export default function StudentDashboard() {
   };
 
   const fetchCompetitionDetails = async () => {
+    if (isTestStudentAuthenticated) {
+      setCompetitionDetails([
+        {
+          event_id: 1,
+          event_name: 'Test Hackathon',
+          event_date: '2024-03-15',
+          role: 'Participant',
+          achievement: 'Finalist',
+          skills: ['JavaScript', 'React']
+        }
+      ]);
+      return;
+    }
     try {
       const response = await axios.get(`${BASE_URL}/api/competition-information`, {
         withCredentials: true
@@ -183,6 +242,21 @@ export default function StudentDashboard() {
   };
 
   const fetchSkillsDetails = async () => {
+    if (isTestStudentAuthenticated) {
+      setSkillsDetails([
+        {
+          skill_id: 1,
+          skill_name: 'JavaScript',
+          skill_proficiency: 'Advanced'
+        },
+        {
+          skill_id: 2,
+          skill_name: 'React',
+          skill_proficiency: 'Intermediate'
+        }
+      ]);
+      return;
+    }
     try {
       const response = await axios.get(`${BASE_URL}/api/skills-information`, {
         withCredentials: true

@@ -1,25 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../../middleware/authenticationToken');
-const pool = require('../../config/db');
+const supabase = require('../../config/supabaseClient');
 
 // GET extra curricular activities for authenticated user
 router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        const result = await pool.query(
-            `SELECT 
-                activity_name, 
-                role,
-                organization,
-                duration
-             FROM extra_curricular 
-             WHERE user_id = $1`,
-            [userId]
-        );
+        const { data, error } = await supabase
+            .from('extra_curricular')
+            .select('activity_name, role, organization, duration')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
 
-        if (result.rows.length === 0) {
+        if (error) {
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
             return res.status(404).json({
                 message: 'Extra curricular activities not found',
                 solution: 'Submit your extra curricular activities first'
@@ -28,7 +27,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
         res.status(200).json({
             message: 'Extra curricular activities retrieved successfully',
-            data: result.rows
+            data
         });
 
     } catch (error) {
@@ -46,18 +45,17 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     const requestedUserId = req.params.userId;
 
     try {
-        const result = await pool.query(
-            `SELECT 
-                activity_name, 
-                role,
-                organization,
-                duration
-             FROM extra_curricular 
-             WHERE user_id = $1`,
-            [requestedUserId]
-        );
+        const { data, error } = await supabase
+            .from('extra_curricular')
+            .select('activity_name, role, organization, duration')
+            .eq('user_id', requestedUserId)
+            .order('created_at', { ascending: false });
 
-        if (result.rows.length === 0) {
+        if (error) {
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
             return res.status(404).json({
                 message: 'Extra curricular activities not found for requested user'
             });
@@ -65,7 +63,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
 
         res.status(200).json({
             message: 'Extra curricular activities retrieved successfully',
-            data: result.rows
+            data
         });
 
     } catch (error) {

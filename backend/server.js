@@ -1,4 +1,3 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 // const bodyParser = require("body-parser"); // Remove this
@@ -7,7 +6,7 @@ const errorHandler = require("./middleware/errorMiddleware");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { Pool } = require("pg");
+const { NODE_ENV, FRONTEND_URL, ATS_URL, PORT: SERVER_PORT } = require("./config/env");
 
 const app = express();
 
@@ -17,8 +16,8 @@ app.set("trust proxy", 1);
 const defaultOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-  process.env.FRONTEND_URL,
-  process.env.ATS_URL,
+  FRONTEND_URL,
+  ATS_URL,
 ]
   .filter(Boolean)
   .map((origin) => origin.trim());
@@ -125,7 +124,7 @@ app.use("/api", (req, res, next) => {
 app.use(errorHandler);
 
 // Start Server
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(` Server running on http://localhost:${PORT}`);
+const port = Number(SERVER_PORT) || 5001;
+app.listen(port, () => {
+  console.log(` Server running on http://localhost:${port}`);
 });

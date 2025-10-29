@@ -1,38 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../../middleware/authenticationToken');
-const pool = require('../../config/db');
+const supabase = require('../../config/supabaseClient');
 
 // GET competition events for authenticated user
 router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        const result = await pool.query(
-            `SELECT 
-                event_id,
-                event_name,
-                event_date,
-                role,
-                achievement,
-                skills,
-                user_id
-             FROM competition_events 
-             WHERE user_id = $1`,
-            [userId]
-        );
+        const { data, error } = await supabase
+            .from('competition_events')
+            .select('event_id, event_name, event_date, role, achievement, skills, user_id')
+            .eq('user_id', userId)
+            .order('event_date', { ascending: false });
 
-        if (result.rows.length === 0) {
+        if (error) {
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
             return res.status(404).json({
                 message: 'Competition events not found',
                 solution: 'Submit your competition events first'
             });
         }
 
-        // Format event date for better readability
-        const competitionEvents = result.rows.map(event => ({
+        const competitionEvents = data.map(event => ({
             ...event,
-            event_date: event.event_date ? event.event_date.toISOString().split('T')[0] : null
+            event_date: event.event_date ? event.event_date.split('T')[0] : null
         }));
 
         res.status(200).json({
@@ -55,30 +50,25 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     const requestedUserId = req.params.userId;
 
     try {
-        const result = await pool.query(
-            `SELECT 
-                event_id,
-                event_name,
-                event_date,
-                role,
-                achievement,
-                skills,
-                user_id
-             FROM competition_events 
-             WHERE user_id = $1`,
-            [requestedUserId]
-        );
+        const { data, error } = await supabase
+            .from('competition_events')
+            .select('event_id, event_name, event_date, role, achievement, skills, user_id')
+            .eq('user_id', requestedUserId)
+            .order('event_date', { ascending: false });
 
-        if (result.rows.length === 0) {
+        if (error) {
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
             return res.status(404).json({
                 message: 'Competition events not found for requested user'
             });
         }
 
-        // Format event date for better readability
-        const responseData = result.rows.map(event => ({
+        const responseData = data.map(event => ({
             ...event,
-            event_date: event.event_date ? event.event_date.toISOString().split('T')[0] : null
+            event_date: event.event_date ? event.event_date.split('T')[0] : null
         }));
 
         res.status(200).json({
