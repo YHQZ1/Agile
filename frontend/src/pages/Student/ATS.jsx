@@ -12,7 +12,25 @@ const ATS = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
+
+  const normalizeAnalysisResult = (data) => ({
+    jd_match: data?.jd_match ?? '0',
+    profile_summary: data?.profile_summary ?? 'We could not generate a summary for this resume.',
+    education: data?.education ?? 'No education details detected.',
+    experience: data?.experience ?? 'No experience information detected.',
+    projects: Array.isArray(data?.projects) ? data.projects : [],
+    achievements: Array.isArray(data?.achievements) ? data.achievements : [],
+    category_matches: typeof data?.category_matches === 'object' && data.category_matches !== null
+      ? data.category_matches
+      : {},
+    skill_gaps: typeof data?.skill_gaps === 'object' && data.skill_gaps !== null
+      ? data.skill_gaps
+      : {},
+    key_strengths: Array.isArray(data?.key_strengths) ? data.key_strengths : [],
+    missing_keywords: Array.isArray(data?.missing_keywords) ? data.missing_keywords : [],
+    recommendations: Array.isArray(data?.recommendations) ? data.recommendations : [],
+  });
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -54,7 +72,7 @@ const ATS = () => {
         },
       });
 
-      setAnalysisResult(response.data);
+  setAnalysisResult(normalizeAnalysisResult(response.data));
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to analyze resume. Please try again.');
     } finally {

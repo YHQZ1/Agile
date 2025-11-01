@@ -496,6 +496,7 @@ const RoadmapFeature = () => {
 
           <div className="filter-group">
             <FaFilter className="filter-icon" />
+            <span>Filter</span>
             <select 
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}

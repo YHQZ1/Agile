@@ -1,15 +1,20 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import "../../styles/Student/StudentDashboard.css";
+import { ThemeContext } from '../../context/ThemeContext';
+import {
+  FaUser, FaGraduationCap, FaBriefcase, FaUsers, FaTrophy,
+  FaCode, FaCalendar, FaMapMarkerAlt, FaMedal, FaLightbulb,
+  FaEdit, FaSync, FaArrowRight, FaStar, FaClock, FaCheckCircle
+} from 'react-icons/fa';
+import "../../styles/Student/StudentDashboardNew.css";
 import { BACKEND_URL } from '../../config/env';
 
 const isTestStudentAuthenticated = localStorage.getItem('isTestStudentAuthenticated') === 'true';
-
 const BASE_URL = BACKEND_URL;
 
 export default function StudentDashboard() {
+  const { darkMode } = useContext(ThemeContext);
   const initialPersonalDetails = {
     firstName: '',
     lastName: '',
@@ -34,6 +39,7 @@ export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState('personal');
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('overview');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const getProficiencyColor = (proficiency) => {
     switch(proficiency) {
@@ -44,7 +50,7 @@ export default function StudentDashboard() {
     }
   };
 
-  const fetchPersonalDetails = async () => {
+  const fetchPersonalDetails = useCallback(async () => {
     if (isTestStudentAuthenticated) {
       setPersonalDetails({
         firstName: 'Test',
@@ -82,7 +88,7 @@ export default function StudentDashboard() {
       });
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate('/login');
+        navigate('/auth');
         return;
       }
 
@@ -93,94 +99,45 @@ export default function StudentDashboard() {
 
       throw err;
     }
-  };
+  }, [navigate]);
 
-  const fetchVolunteerDetails = async () => {
-    if (isTestStudentAuthenticated) {
-      setVolunteeringDetails([
-        {
-          volunteering_id: 1,
-          organization: 'Test Org',
-          location: 'Test City',
-          sector: 'Education',
-          task: 'Teaching',
-          startDate: '2024-01-01',
-          endDate: '2024-06-01'
-        }
-      ]);
-      return;
-    }
-    try {
-      const response = await axios.get(`${BASE_URL}/api/volunteer-information`, {
-        withCredentials: true
-      });
-
-      const data = response.data?.data || [];
-
-      const formattedData = data.map(item => ({
-        volunteering_id: item.volunteering_id || null,
-        organization: item.organization || item.task || 'Volunteering',
-        location: item.location || '',
-        sector: item.company_sector || '',
-        task: item.task || '',
-        startDate: item.start_date || '',
-        endDate: item.end_date || ''
-      }));
-
-      setVolunteeringDetails(formattedData);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        navigate('/login');
-        return;
-      }
-
-      if (err.response?.status === 404) {
-        setVolunteeringDetails([]);
-        return;
-      }
-
-      throw err;
-    }
-  };
-
-  const fetchInternshipDetails = async () => {
+  const fetchInternshipDetails = useCallback(async () => {
     if (isTestStudentAuthenticated) {
       setInternshipDetails([
         {
-          internship_id: 1,
-          company: 'Test Company',
-          position: 'Intern',
-          location: 'Test City',
-          sector: 'IT',
-          startDate: '2024-02-01',
-          endDate: '2024-07-01',
-          stipend: '10000'
+          position: 'Software Developer Intern',
+          company: 'Example Labs',
+          location: 'Remote',
+          sector: 'Technology',
+          startDate: '2024-05-01',
+          endDate: '2024-07-31',
+          stipend: 'INR 15000 / month'
         }
       ]);
       return;
     }
+
     try {
       const response = await axios.get(`${BASE_URL}/api/internship-information`, {
         withCredentials: true
       });
 
-      const data = response.data?.data || [];
-
-      const formattedData = data.map(item => ({
-        internship_id: item.internship_id || null,
-        company: item.company_name || '',
-        position: item.job_title || '',
+      const items = Array.isArray(response.data?.data) ? response.data.data : [];
+      const normalized = items.map((item) => ({
+        id: item.internship_id ?? item.id ?? null,
+        position: item.job_title || item.position || '',
+        company: item.company_name || item.company || '',
         location: item.location || '',
-        sector: item.company_sector || '',
-        startDate: item.start_date || '',
-        endDate: item.end_date || '',
-        stipend: item.stipend_salary || ''
+        sector: item.company_sector || item.sector || '',
+        startDate: item.start_date || item.startDate || '',
+        endDate: item.end_date || item.endDate || '',
+        stipend: item.stipend_salary || item.stipend || ''
       }));
 
-      setInternshipDetails(formattedData);
+      setInternshipDetails(normalized);
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate('/login');
+        navigate('/auth');
         return;
       }
 
@@ -189,91 +146,78 @@ export default function StudentDashboard() {
         return;
       }
 
+      console.error('Failed to load internships', err);
       throw err;
     }
-  };
+  }, [navigate]);
 
-  const fetchCompetitionDetails = async () => {
+  const fetchVolunteerDetails = useCallback(async () => {
     if (isTestStudentAuthenticated) {
-      setCompetitionDetails([
+      setVolunteeringDetails([
         {
-          event_id: 1,
-          event_name: 'Test Hackathon',
-          event_date: '2024-03-15',
-          role: 'Participant',
-          achievement: 'Finalist',
-          skills: ['JavaScript', 'React']
+          organization: 'Community Care',
+          location: 'Pune',
+          sector: 'Education',
+          task: 'Mentored first-year students in coding fundamentals',
+          startDate: '2024-01-15',
+          endDate: '2024-03-15'
         }
       ]);
       return;
     }
+
     try {
-      const response = await axios.get(`${BASE_URL}/api/competition-information`, {
+      const response = await axios.get(`${BASE_URL}/api/volunteer-information`, {
         withCredentials: true
       });
 
-      const data = response.data?.data || [];
-
-      const formattedData = data.map(item => ({
-        event_id: item.event_id || null,
-        event_name: item.event_name || '',
-        event_date: item.event_date || '',
-        role: item.role || '',
-        achievement: item.achievement || '',
-        skills: item.skills
-          ? item.skills.split(',').map((skill) => skill.trim()).filter(Boolean)
-          : [],
+      const items = Array.isArray(response.data?.data) ? response.data.data : [];
+      const normalized = items.map((item) => ({
+        id: item.volunteering_id ?? item.id ?? null,
+        organization: item.organization || item.company_sector || '',
+        location: item.location || '',
+        sector: item.company_sector || item.sector || '',
+        task: item.task || item.impact || '',
+        startDate: item.start_date || item.startDate || '',
+        endDate: item.end_date || item.endDate || ''
       }));
 
-      setCompetitionDetails(formattedData);
+      setVolunteeringDetails(normalized);
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate('/login');
+        navigate('/auth');
         return;
       }
 
       if (err.response?.status === 404) {
-        setCompetitionDetails([]);
+        setVolunteeringDetails([]);
         return;
       }
 
+      console.error('Failed to load volunteering details', err);
       throw err;
     }
-  };
+  }, [navigate]);
 
-  const fetchSkillsDetails = async () => {
+  const fetchSkillsDetails = useCallback(async () => {
     if (isTestStudentAuthenticated) {
       setSkillsDetails([
-        {
-          skill_id: 1,
-          skill_name: 'JavaScript',
-          skill_proficiency: 'Advanced'
-        },
-        {
-          skill_id: 2,
-          skill_name: 'React',
-          skill_proficiency: 'Intermediate'
-        }
+        { skill_name: 'React', skill_proficiency: 'Advanced' },
+        { skill_name: 'Node.js', skill_proficiency: 'Intermediate' }
       ]);
       return;
     }
+
     try {
       const response = await axios.get(`${BASE_URL}/api/skills-information`, {
         withCredentials: true
       });
 
-      const data = response.data?.data || [];
-
-      const formattedData = data.map(item => ({
-        skill_id: item.skill_id || null,
-        skill_name: item.skill_name || '',
-        skill_proficiency: item.skill_proficiency || 'Beginner'
-      }));
-
-      setSkillsDetails(formattedData);
+      const items = Array.isArray(response.data?.data) ? response.data.data : [];
+      setSkillsDetails(items);
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate('/login');
+        navigate('/auth');
         return;
       }
 
@@ -282,32 +226,96 @@ export default function StudentDashboard() {
         return;
       }
 
+      console.error('Failed to load skills', err);
       throw err;
     }
-  };
+  }, [navigate]);
 
-  const fetchAccomplishmentDetails = async () => {
+  const fetchCompetitionDetails = useCallback(async () => {
+    if (isTestStudentAuthenticated) {
+      setCompetitionDetails([
+        {
+          event_name: 'Hackathon 2024',
+          event_date: '2024-08-20',
+          role: 'Team Lead',
+          achievement: '2nd Place',
+          skills: ['React', 'Teamwork']
+        }
+      ]);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${BASE_URL}/api/competition-information`, {
+        withCredentials: true
+      });
+
+      const items = Array.isArray(response.data?.data) ? response.data.data : [];
+      const normalized = items.map((item) => ({
+        id: item.event_id ?? item.id ?? null,
+        event_name: item.event_name || item.name || '',
+        event_date: item.event_date || item.eventDate || '',
+        role: item.role || '',
+        achievement: item.achievement || '',
+        skills: Array.isArray(item.skills)
+          ? item.skills
+          : typeof item.skills === 'string'
+            ? item.skills.split(',').map((skill) => skill.trim()).filter(Boolean)
+            : []
+      }));
+
+      setCompetitionDetails(normalized);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate('/auth');
+        return;
+      }
+
+      if (err.response?.status === 404) {
+        setCompetitionDetails([]);
+        return;
+      }
+
+      console.error('Failed to load competition details', err);
+      throw err;
+    }
+  }, [navigate]);
+
+  const fetchAccomplishmentDetails = useCallback(async () => {
+    if (isTestStudentAuthenticated) {
+      setAccomplishmentDetails([
+        {
+          title: 'Dean\'s List',
+          institution: 'Symbiosis Institute of Technology',
+          type: 'Academic',
+          description: 'Awarded for exceptional academic performance',
+          accomplishment_date: '2024-05-10',
+          rank: 'Top 5%'
+        }
+      ]);
+      return;
+    }
+
     try {
       const response = await axios.get(`${BASE_URL}/api/accomplishment-information`, {
         withCredentials: true
       });
 
-      const data = response.data?.data || [];
-
-      const formattedData = data.map(item => ({
-        accomplishment_id: item.accomplishment_id || null,
+      const items = Array.isArray(response.data?.data) ? response.data.data : [];
+      const normalized = items.map((item) => ({
+        id: item.accomplishment_id ?? item.id ?? null,
         title: item.title || '',
         institution: item.institution || '',
         type: item.type || '',
         description: item.description || '',
-        accomplishment_date: item.accomplishment_date || '',
+        accomplishment_date: item.accomplishment_date || item.accomplishmentDate || '',
         rank: item.rank || ''
       }));
 
-      setAccomplishmentDetails(formattedData);
+      setAccomplishmentDetails(normalized);
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate('/login');
+        navigate('/auth');
         return;
       }
 
@@ -316,30 +324,42 @@ export default function StudentDashboard() {
         return;
       }
 
+      console.error('Failed to load accomplishments', err);
       throw err;
     }
-  };
+  }, [navigate]);
 
-  const fetchExtraCurricularDetails = async () => {
+  const fetchExtraCurricularDetails = useCallback(async () => {
+    if (isTestStudentAuthenticated) {
+      setExtraCurricularDetails([
+        {
+          activity_name: 'Coding Club',
+          role: 'Coordinator',
+          organization: 'SIT Tech Club',
+          duration: 'Aug 2023 - Present'
+        }
+      ]);
+      return;
+    }
+
     try {
       const response = await axios.get(`${BASE_URL}/api/extra-curricular-information`, {
         withCredentials: true
       });
 
-      const data = response.data?.data || [];
-
-      const formattedData = data.map(item => ({
-        extra_curricular_id: item.extra_curricular_id || null,
-        activity_name: item.activity_name || '',
+      const items = Array.isArray(response.data?.data) ? response.data.data : [];
+      const normalized = items.map((item) => ({
+        id: item.activity_id ?? item.id ?? null,
+        activity_name: item.activity_name || item.activity || '',
         role: item.role || '',
         organization: item.organization || '',
         duration: item.duration || ''
       }));
 
-      setExtraCurricularDetails(formattedData);
+      setExtraCurricularDetails(normalized);
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate('/login');
+        navigate('/auth');
         return;
       }
 
@@ -348,15 +368,16 @@ export default function StudentDashboard() {
         return;
       }
 
+      console.error('Failed to load extra curricular details', err);
       throw err;
     }
-  };
+  }, [navigate]);
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      setLoading(true);
-      setError(null);
+  const loadDashboardData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
+    try {
       const results = await Promise.allSettled([
         fetchPersonalDetails(),
         fetchVolunteerDetails(),
@@ -368,7 +389,7 @@ export default function StudentDashboard() {
       ]);
 
       const failures = results.filter((result) => result.status === 'rejected');
-      if (failures.length === results.length) {
+      if (failures.length === results.length && failures.length > 0) {
         const err = failures[0].reason;
         console.error('Error loading dashboard data:', err);
         setError(err?.response?.data?.error || err?.message || 'Failed to load dashboard');
@@ -377,12 +398,22 @@ export default function StudentDashboard() {
           console.warn('Partial dashboard load failure:', failure.reason);
         });
       }
-
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [
+    fetchPersonalDetails,
+    fetchVolunteerDetails,
+    fetchInternshipDetails,
+    fetchCompetitionDetails,
+    fetchSkillsDetails,
+    fetchAccomplishmentDetails,
+    fetchExtraCurricularDetails
+  ]);
 
+  useEffect(() => {
     loadDashboardData();
-  }, [navigate]);
+  }, [loadDashboardData]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not specified';
@@ -400,355 +431,409 @@ export default function StudentDashboard() {
     return 'Duration not specified';
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadDashboardData();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
   if (loading) {
     return (
-      <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading your dashboard...</p>
+      <div className={`dashboard-loading-container ${darkMode ? 'dark' : ''}`}>
+        <div className="loading-spinner-wrapper">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading your profile...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="dashboard-error">
-        <div className="error-icon"></div>
-        <h3>Error loading dashboard</h3>
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()} className="retry-button">
-          Try Again
-        </button>
+      <div className={`dashboard-error-container ${darkMode ? 'dark' : ''}`}>
+        <div className="error-content">
+          <div className="error-icon">⚠️</div>
+          <h2>Unable to Load Profile</h2>
+          <p>{error}</p>
+          <div className="error-actions">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="retry-button"
+              aria-label="Retry loading dashboard"
+            >
+              <FaSync /> Try Again
+            </button>
+            <button 
+              onClick={() => navigate('/student-form')} 
+              className="secondary-button"
+            >
+              <FaEdit /> Update Profile
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!personalDetails.firstName && !personalDetails.lastName) {
     return (
-      <div className="no-details-container">
-        <h2>No Personal Details Found</h2>
-        <button onClick={() => navigate('/personal-details-form')} className="add-details-button">
-          Add Personal Details
-        </button>
+      <div className={`no-details-container ${darkMode ? 'dark' : ''}`}>
+        <div className="empty-state">
+          <FaUser className="empty-icon" />
+          <h2>Complete Your Profile</h2>
+          <p>Let's get you started! Add your personal details to build your complete profile.</p>
+          <button 
+            onClick={() => navigate('/student-form')} 
+            className="primary-button large"
+          >
+            <FaEdit /> Add Details <FaArrowRight />
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Placeholder data for other tabs (to be replaced with API calls)
   const academicData = [];
   const experienceData = [];
   const skillsData = [];
   const projectsData = [];
 
   return (
-    <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div className="profile-section">
-          <div className="profile-info">
+    <div className={`dashboard-wrapper ${darkMode ? 'dark' : 'light'}`}>
+      {/* Header Card */}
+      <div className="dashboard-header-card">
+        <div className="header-background"></div>
+        <div className="header-content">
+          <div className="profile-avatar">
+            {personalDetails.profilePicture ? (
+              <img src={personalDetails.profilePicture} alt={`${personalDetails.firstName} ${personalDetails.lastName}`} />
+            ) : (
+              <FaUser className="avatar-icon" />
+            )}
+          </div>
+          <div className="profile-header-info">
             <h1>{personalDetails.firstName} {personalDetails.lastName}</h1>
-            <p className="institute-roll">{personalDetails.instituteRollNo}</p>
-            <div className="contact-info">
-              <span>{personalDetails.email}</span>
-              <span>{personalDetails.phone}</span>
+            <p className="roll-number"><FaGraduationCap /> {personalDetails.instituteRollNo}</p>
+            <div className="contact-links">
+              <a href={`mailto:${personalDetails.email}`} title="Send email">{personalDetails.email}</a>
+              <a href={`tel:${personalDetails.phone}`} title="Call">{personalDetails.phone}</a>
             </div>
           </div>
+          <div className="header-actions">
+            <button 
+              className="icon-button"
+              onClick={() => navigate('/settings')}
+              title="Edit profile"
+              aria-label="Edit profile"
+            >
+              <FaEdit />
+            </button>
+            <button 
+              className="icon-button"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Refresh data"
+              aria-label="Refresh data"
+            >
+              <FaSync className={isRefreshing ? 'spinning' : ''} />
+            </button>
+          </div>
         </div>
-      </header>
+      </div>
 
-      <nav className="dashboard-nav">
-        <ul className="section-tabs">
-          <li className={activeSection === 'overview' ? 'active' : ''} 
-              onClick={() => setActiveSection('overview')}>Overview</li>
-          <li className={activeSection === 'academic' ? 'active' : ''} 
-              onClick={() => setActiveSection('academic')}>Academic</li>
-          <li className={activeSection === 'experience' ? 'active' : ''} 
-              onClick={() => setActiveSection('experience')}>Experience</li>
-          <li className={activeSection === 'skills' ? 'active' : ''} 
-              onClick={() => setActiveSection('skills')}>Skills</li>
-          <li className={activeSection === 'activities' ? 'active' : ''} 
-              onClick={() => setActiveSection('activities')}>Activities</li>
-        </ul>
-      </nav>
+      {/* Quick Stats */}
+      <div className="quick-stats">
+        <div className="stat-card">
+          <div className="stat-icon"><FaBriefcase /></div>
+          <div className="stat-value">{internshipDetails.length}</div>
+          <div className="stat-label">Internships</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon"><FaCode /></div>
+          <div className="stat-value">{skillsDetails.length}</div>
+          <div className="stat-label">Skills</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon"><FaTrophy /></div>
+          <div className="stat-value">{accomplishmentDetails.length}</div>
+          <div className="stat-label">Achievements</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon"><FaUsers /></div>
+          <div className="stat-value">{volunteeringDetails.length}</div>
+          <div className="stat-label">Volunteering</div>
+        </div>
+      </div>
 
-      <main className="dashboard-content">
+      {/* Navigation Tabs */}
+      <div className="dashboard-nav-new">
+        <div className="nav-tabs">
+          <button 
+            className={`nav-tab ${activeSection === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveSection('overview')}
+          >
+            <FaUser /> Overview
+          </button>
+          <button 
+            className={`nav-tab ${activeSection === 'experience' ? 'active' : ''}`}
+            onClick={() => setActiveSection('experience')}
+          >
+            <FaBriefcase /> Experience
+          </button>
+          <button 
+            className={`nav-tab ${activeSection === 'skills' ? 'active' : ''}`}
+            onClick={() => setActiveSection('skills')}
+          >
+            <FaCode /> Skills
+          </button>
+          <button 
+            className={`nav-tab ${activeSection === 'activities' ? 'active' : ''}`}
+            onClick={() => setActiveSection('activities')}
+          >
+            <FaMedal /> Activities
+          </button>
+        </div>
+      </div>
+
+      {/* Content Sections */}
+      <main className="dashboard-main">
+        {/* OVERVIEW SECTION */}
         {activeSection === 'overview' && (
-          <section className="overview-section">
+          <section className="content-section overview-section">
             <h2>Personal Information</h2>
-            <div className="personal-details">
-              <div className="detail-row">
-                <div className="detail-item">
-                  <span className="detail-label">Full Name</span>
-                  <span className="detail-value">{personalDetails.firstName} {personalDetails.lastName}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Roll Number</span>
-                  <span className="detail-value">{personalDetails.instituteRollNo}</span>
-                </div>
+            <div className="details-grid">
+              <div className="detail-card">
+                <span className="detail-icon"><FaUser /></span>
+                <span className="detail-label">Full Name</span>
+                <span className="detail-value">{personalDetails.firstName} {personalDetails.lastName}</span>
               </div>
-              <div className="detail-row">
-                <div className="detail-item">
-                  <span className="detail-label">Email</span>
-                  <span className="detail-value">{personalDetails.email}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Phone</span>
-                  <span className="detail-value">{personalDetails.phone}</span>
-                </div>
+              <div className="detail-card">
+                <span className="detail-icon"><FaGraduationCap /></span>
+                <span className="detail-label">Roll Number</span>
+                <span className="detail-value">{personalDetails.instituteRollNo}</span>
               </div>
-              <div className="detail-row">
-                <div className="detail-item">
-                  <span className="detail-label">Date of Birth</span>
-                  <span className="detail-value">{formatDate(personalDetails.dob)}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Gender</span>
-                  <span className="detail-value">{personalDetails.gender || 'Not specified'}</span>
-                </div>
+              <div className="detail-card">
+                <span className="detail-icon">📧</span>
+                <span className="detail-label">Email</span>
+                <span className="detail-value">{personalDetails.email}</span>
+              </div>
+              <div className="detail-card">
+                <span className="detail-icon">📞</span>
+                <span className="detail-label">Phone</span>
+                <span className="detail-value">{personalDetails.phone}</span>
+              </div>
+              <div className="detail-card">
+                <span className="detail-icon"><FaCalendar /></span>
+                <span className="detail-label">Date of Birth</span>
+                <span className="detail-value">{formatDate(personalDetails.dob)}</span>
+              </div>
+              <div className="detail-card">
+                <span className="detail-icon">👤</span>
+                <span className="detail-label">Gender</span>
+                <span className="detail-value">{personalDetails.gender || 'Not specified'}</span>
               </div>
             </div>
-
-            {/* <h2>Highlights</h2>
-            <div className="highlights-grid">
-              {skillsData.length > 0 && (
-                <div className="highlight-box">
-                  <h3>Skills</h3>
-                  <div className="highlight-content">
-                    {skillsData.slice(0, 3).map((skill, index) => (
-                      <span key={index} className={`skill-badge ${getProficiencyColor(skill.proficiency)}`}>
-                        {skill.name}
-                      </span>
-                    ))}
-                    {skillsData.length > 3 && (
-                      <span className="more-badge">+{skillsData.length - 3} more</span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {projectsData.length > 0 && (
-                <div className="highlight-box">
-                  <h3>Projects</h3>
-                  <div className="highlight-content">
-                    {projectsData.slice(0, 1).map((project, index) => (
-                      <div key={index} className="highlight-item">
-                        <span className="highlight-title">{project.title}</span>
-                        <span className="highlight-subtitle">{project.role}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {accomplishmentDetails.length > 0 && (
-                <div className="highlight-box">
-                  <h3>Accomplishments</h3>
-                  <div className="highlight-content">
-                    {accomplishmentDetails.slice(0, 1).map((accom, index) => (
-                      <div key={index} className="highlight-item">
-                        <span className="highlight-title">{accom.title}</span>
-                        <span className="highlight-subtitle">{accom.institution}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {internshipDetails.length > 0 && (
-                <div className="highlight-box">
-                  <h3>Experience</h3>
-                  <div className="highlight-content">
-                    {internshipDetails.slice(0, 1).map((intern, index) => (
-                      <div key={index} className="highlight-item">
-                        <span className="highlight-title">{intern.position}</span>
-                        <span className="highlight-subtitle">{intern.company}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div> */}
           </section>
         )}
 
-        {activeTab === 'academic' && (
-          <div className="tab-content">
-            <h2>Academic Information</h2>
-            {academicData.length > 0 ? (
-              <div className="data-grid">
-                {/* Academic data will be rendered here */}
-              </div>
-            ) : (
-              <p className="no-data-message">No academic information available</p>
-            )}
-          </div>
-        )}
-
+        {/* EXPERIENCE SECTION */}
         {activeSection === 'experience' && (
-          <section className="experience-section">
-          <h2>Internships</h2>
-            <div className="experience-timeline">
+          <section className="content-section experience-section">
+            {/* Internships */}
+            <div className="section-block">
+              <h2><FaBriefcase /> Internships</h2>
               {internshipDetails.length > 0 ? (
-                internshipDetails.map((internshipDetails, index) => (
-                  <div key={index} className="timeline-item">
-                    <div className="timeline-marker"></div>
-                    <div className="timeline-content">
-                      <div className="experience-header">
-                        <h3>{internshipDetails.position}</h3>
-                        <div className="experience-duration">
-                          {formatDate(internshipDetails.startDate)} - {internshipDetails.endDate ? formatDate(internshipDetails.endDate) : 'Present'}
-                        </div>
+                <div className="cards-grid">
+                  {internshipDetails.map((internship, idx) => (
+                    <div key={idx} className="experience-card">
+                      <div className="card-header">
+                        <h3>{internship.position}</h3>
+                        <span className="company-badge">{internship.company}</span>
                       </div>
-                      <div className="experience-company">
-                        <span>{internshipDetails.company}</span>
-                        <span className="experience-location">{internshipDetails.location}</span>
-                      </div>
-                      <div className="experience-details">
-                        <div className="experience-sector">
-                          <span className="detail-label">Sector:</span>
-                          <span className="detail-value">{internshipDetails.sector}</span>
+                      <div className="card-body">
+                        <div className="info-row">
+                          <FaMapMarkerAlt /> {internship.location}
                         </div>
-                        {internshipDetails.stipend && (
-                          <div className="experience-stipend">
-                            <span className="detail-label">Stipend:</span>
-                            <span className="detail-value">{internshipDetails.stipend}</span>
+                        <div className="info-row">
+                          <FaCalendar /> {formatDate(internship.startDate)} - {internship.endDate ? formatDate(internship.endDate) : 'Present'}
+                        </div>
+                        {internship.sector && (
+                          <div className="info-row">
+                            <span className="sector-tag">{internship.sector}</span>
+                          </div>
+                        )}
+                        {internship.stipend && (
+                          <div className="info-row stipend">
+                            💰 {internship.stipend}
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
-                <p className="no-data-message">No internships added yet.</p>
+                <div className="empty-message">
+                  <p>No internships added yet. <a href="#settings">Add your first internship</a></p>
+                </div>
               )}
             </div>
 
-            <h2>Volunteering</h2>
-            <div className="experience-timeline">
+            {/* Volunteering */}
+            <div className="section-block">
+              <h2><FaUsers /> Volunteering</h2>
               {volunteeringDetails.length > 0 ? (
-                volunteeringDetails.map((volunteeringDetails, index) => (
-                  <div key={index} className="timeline-item">
-                    <div className="timeline-marker volunteer-marker"></div>
-                    <div className="timeline-content">
-                      <div className="experience-header">
-                        <h3>{volunteeringDetails.organization}</h3>
-                        <div className="experience-duration">
-                          {formatDate(volunteeringDetails.startDate)} - {volunteeringDetails.endDate ? formatDate(volunteeringDetails.endDate) : 'Present'}
+                <div className="cards-grid">
+                  {volunteeringDetails.map((volunteer, idx) => (
+                    <div key={idx} className="experience-card volunteer-card">
+                      <div className="card-header">
+                        <h3>{volunteer.organization}</h3>
+                        <span className="org-badge">{volunteer.sector}</span>
+                      </div>
+                      <div className="card-body">
+                        <div className="info-row">
+                          <FaMapMarkerAlt /> {volunteer.location}
                         </div>
+                        <div className="info-row">
+                          <FaCalendar /> {formatDate(volunteer.startDate)} - {volunteer.endDate ? formatDate(volunteer.endDate) : 'Present'}
+                        </div>
+                        {volunteer.task && (
+                          <div className="task-description">
+                            <p>{volunteer.task}</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="experience-company">
-                        <span>{volunteeringDetails.location}</span>
-                        <span className="experience-sector">{volunteeringDetails.sector}</span>
-                      </div>
-                      <p className="volunteer-task">{volunteeringDetails.task}</p>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
-                <p className="no-data-message">No volunteering experience added yet.</p>
+                <div className="empty-message">
+                  <p>No volunteering experience added yet.</p>
+                </div>
               )}
             </div>
           </section>
         )}
-        
+
+        {/* SKILLS SECTION */}
         {activeSection === 'skills' && (
-          <section className="skills-section">
-            <h2>Technical & Soft Skills</h2>
-              <div className="skills-container">
-                {skillsDetails.length > 0 ? (
-                  <div className="skills-grid">
-                    {skillsDetails.map((skillsDetails, index) => (
-                      <div key={index} className="skill-item">
-                        <div className="skill-name">{skillsDetails.skill_name}</div>
-                        <div className="skill-proficiency-bar">
-                          <div 
-                            className={`proficiency-level ${skillsDetails.skill_proficiency.toLowerCase()}`} 
-                            style={{ 
-                              width: skillsDetails.skill_proficiency === 'Beginner' ? '33%' : 
-                                    skillsDetails.skill_proficiency === 'Intermediate' ? '66%' : '100%' 
-                            }}
-                          ></div>
-                        </div>
-                        <div className="proficiency-label">{skillsDetails.skill_proficiency}</div>
+          <section className="content-section skills-section">
+            <h2><FaCode /> Technical & Soft Skills</h2>
+            {skillsDetails.length > 0 ? (
+              <div className="skills-showcase">
+                {skillsDetails.map((skill, idx) => {
+                  const proficiency = skill.skill_proficiency || 'Intermediate';
+                  const profWidth = 
+                    proficiency === 'Beginner' ? 33 : 
+                    proficiency === 'Intermediate' ? 66 : 
+                    proficiency === 'Expert' ? 100 : 80;
+                  
+                  return (
+                    <div key={idx} className="skill-showcase-card">
+                      <div className="skill-header">
+                        <span className="skill-title">{skill.skill_name}</span>
+                        <span className={`proficiency-badge ${proficiency.toLowerCase()}`}>
+                          {proficiency}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="no-data-message">No skills added yet.</p>
-                )}
+                      <div className="skill-bar">
+                        <div 
+                          className="skill-bar-fill" 
+                          style={{ width: `${profWidth}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            ) : (
+              <div className="empty-message">
+                <p>No skills added yet. <a href="#settings">Add your skills</a></p>
+              </div>
+            )}
           </section>
         )}
 
+        {/* ACTIVITIES SECTION */}
         {activeSection === 'activities' && (
-          <section className="activities-section">
-            <h2>Competitions & Events</h2>
-            <div className="competitions-list">
-              {competitionDetails.length > 0 ? (
-                competitionDetails.map((competition, index) => (
-                  <div key={index} className="competition-item">
-                    <div className="competition-header">
-                      <h3>{competition.event_name}</h3>
-                      <span className="competition-date">{formatDate(competition.event_date)}</span>
-                    </div>
-                    <div className="competition-role-achievement">
-                      {competition.role && <span className="competition-role">{competition.role}</span>}
-                      {competition.achievement && <span className="competition-achievement">{competition.achievement}</span>}
-                    </div>
-                    {competition.skills && competition.skills.length > 0 && (
-                      <div className="competition-skills">
-                        <span className="detail-label">Skills Demonstrated:</span>
+          <section className="content-section activities-section">
+            {/* Competitions */}
+            {competitionDetails.length > 0 && (
+              <div className="section-block">
+                <h2><FaMedal /> Competitions & Events</h2>
+                <div className="cards-grid">
+                  {competitionDetails.map((comp, idx) => (
+                    <div key={idx} className="achievement-card competition-card">
+                      <div className="achievement-badge">
+                        <FaMedal />
+                      </div>
+                      <h3>{comp.event_name}</h3>
+                      {comp.role && <p className="role">{comp.role}</p>}
+                      {comp.achievement && <p className="achievement">{comp.achievement}</p>}
+                      <p className="date"><FaCalendar /> {formatDate(comp.event_date)}</p>
+                      {comp.skills && comp.skills.length > 0 && (
                         <div className="skills-tags">
-                          {competition.skills.map((skill, i) => (
-                            <span key={i} className="skill-tag">{skill}</span>
+                          {comp.skills.slice(0, 3).map((s, i) => (
+                            <span key={i} className="tag">{s}</span>
                           ))}
                         </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Accomplishments */}
+            {accomplishmentDetails.length > 0 && (
+              <div className="section-block">
+                <h2><FaTrophy /> Accomplishments</h2>
+                <div className="cards-grid">
+                  {accomplishmentDetails.map((acc, idx) => (
+                    <div key={idx} className="achievement-card accomplishment-card">
+                      <div className="achievement-badge trophy">
+                        <FaStar />
                       </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="no-data-message">No competitions added yet.</p>
-              )}
-            </div>
+                      <h3>{acc.title}</h3>
+                      <p className="institution">{acc.institution}</p>
+                      {acc.description && <p className="description">{acc.description}</p>}
+                      <div className="meta">
+                        <span className="type">{acc.type}</span>
+                        {acc.rank && <span className="rank">Rank: {acc.rank}</span>}
+                      </div>
+                      {acc.accomplishment_date && (
+                        <p className="date"><FaCalendar /> {formatDate(acc.accomplishment_date)}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <h2>Accomplishments</h2>
-            <div className="other-accomplishments">
-              {accomplishmentDetails.filter(a => a.type !== 'Academic').length > 0 ? (
-                accomplishmentDetails.filter(a => a.type !== 'Academic').map((accomplishmentDetails, index) => (
-                  <div key={index} className="accomplishment-item">
-                    <div className="accomplishment-header">
-                      <h3>{accomplishmentDetails.title}</h3>
-                      <span className="accomplishment-date">{formatDate(accomplishmentDetails.accomplishment_date)}</span>
+            {/* Extra Curricular */}
+            {extraCurricularDetails.length > 0 && (
+              <div className="section-block">
+                <h2><FaUsers /> Extra-Curricular Activities</h2>
+                <div className="activity-timeline">
+                  {extraCurricularDetails.map((activity, idx) => (
+                    <div key={idx} className="timeline-entry">
+                      <div className="timeline-dot"></div>
+                      <div className="timeline-content-card">
+                        <h3>{activity.activity_name}</h3>
+                        <p className="org">{activity.organization}</p>
+                        <p className="role">{activity.role}</p>
+                        <p className="duration"><FaClock /> {activity.duration}</p>
+                      </div>
                     </div>
-                    <div className="accomplishment-institution">{accomplishmentDetails.institution}</div>
-                    <div className="accomplishment-type">{accomplishmentDetails.type}</div>
-                    <p className="accomplishment-description">{accomplishmentDetails.description}</p>
-                    {accomplishmentDetails.rank && <div className="accomplishment-rank">Rank: {accomplishmentDetails.rank}</div>}
-                  </div>
-                ))
-              ) : (
-                <p className="no-data-message">No other accomplishments added yet.</p>
-              )}
-            </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <h2>Extra Curricular Activities</h2>
-            <div className="activities-list">
-              {extraCurricularDetails.length > 0 ? (
-                extraCurricularDetails.map((extraCurricularDetails, index) => (
-                  <div key={index} className="activity-item">
-                    <div className="activity-header">
-                      <h3>{extraCurricularDetails.activity_name}</h3>
-                      <span className="activity-duration">{formatDuration(extraCurricularDetails.duration)}</span>
-                    </div>
-                    <div className="activity-details">
-                      <span className="activity-role">{extraCurricularDetails.role}</span>
-                      <span className="activity-organization">{extraCurricularDetails.organization}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="no-data-message">No extracurricular activities added yet.</p>
-              )}
-            </div>
+            {competitionDetails.length === 0 && accomplishmentDetails.length === 0 && extraCurricularDetails.length === 0 && (
+              <div className="empty-message">
+                <p>No activities added yet. <a href="#settings">Add competitions, achievements, or activities</a></p>
+              </div>
+            )}
           </section>
         )}
       </main>

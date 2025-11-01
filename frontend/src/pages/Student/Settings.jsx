@@ -648,6 +648,23 @@ const Settings = () => {
     }));
   };
 
+  const updateNotificationSchedule = (field, value) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      inApp: {
+        ...prev.inApp,
+        schedule: { ...prev.inApp.schedule, [field]: value }
+      }
+    }));
+  };
+
+  const updateIntegrationDetail = (service, field, value) => {
+    setIntegrations(prev => ({
+      ...prev,
+      [service]: { ...prev[service], [field]: value }
+    }));
+  };
+
   return (
     <div className={`settings-page ${darkMode ? 'dark' : ''}`}>
       {/* Save Status Notification */}
@@ -1359,8 +1376,510 @@ const Settings = () => {
             </div>
           )}
 
-          {/* ALL OTHER TABS REMAIN THE SAME - Security, Notifications, Privacy, Preferences, Integrations, Help */}
-          {/* (Keeping all your existing tab implementations) */}
+          {activeTab === 'security' && (
+            <div className="settings-section">
+              <h2><FaLock /> Account Security</h2>
+
+              <div className="setting-item">
+                <div className="setting-info">
+                  <h3><FaShieldAlt /> Two-Factor Authentication</h3>
+                  <p>Protect your account with an extra verification step whenever you sign in.</p>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={twoFactorAuth}
+                    onChange={() => setTwoFactorAuth(prev => !prev)}
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+
+              <div className="setting-item" style={{ alignItems: 'flex-start' }}>
+                <div className="setting-info">
+                  <h3><FaLock /> Change Password</h3>
+                  <p>Use a strong password that you do not reuse on other websites.</p>
+                  {showChangePassword && (
+                    <form className="password-change-form" onSubmit={submitPasswordChange}>
+                      <div className="password-input-group">
+                        <label>Current Password</label>
+                        <div className="password-input-wrapper">
+                          <input
+                            type={showPassword.current ? 'text' : 'password'}
+                            name="currentPassword"
+                            value={passwordData.currentPassword}
+                            onChange={handlePasswordChange}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowPassword(prev => ({ ...prev, current: !prev.current }))}
+                          >
+                            {showPassword.current ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="password-input-group">
+                        <label>New Password</label>
+                        <div className="password-input-wrapper">
+                          <input
+                            type={showPassword.new ? 'text' : 'password'}
+                            name="newPassword"
+                            value={passwordData.newPassword}
+                            onChange={handlePasswordChange}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowPassword(prev => ({ ...prev, new: !prev.new }))}
+                          >
+                            {showPassword.new ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="password-input-group">
+                        <label>Confirm New Password</label>
+                        <div className="password-input-wrapper">
+                          <input
+                            type={showPassword.confirm ? 'text' : 'password'}
+                            name="confirmPassword"
+                            value={passwordData.confirmPassword}
+                            onChange={handlePasswordChange}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowPassword(prev => ({ ...prev, confirm: !prev.confirm }))}
+                          >
+                            {showPassword.confirm ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="password-form-actions">
+                        <button
+                          type="button"
+                          className="cancel-button"
+                          onClick={() => {
+                            setShowChangePassword(false);
+                            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className="action-button save-btn">
+                          <FaSave /> Update Password
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+                {!showChangePassword && (
+                  <button className="edit-btn" type="button" onClick={() => setShowChangePassword(true)}>
+                    <FaEdit /> Change
+                  </button>
+                )}
+              </div>
+
+              <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div className="setting-info" style={{ maxWidth: '100%' }}>
+                  <h3><FaShieldAlt /> Active Sessions</h3>
+                  <p>Review devices that are currently signed in and revoke access if something looks unfamiliar.</p>
+                </div>
+                <div className="sessions-list">
+                  {activeSessions.length === 0 && <p className="empty-state">No active sessions to display.</p>}
+                  {activeSessions.map(session => (
+                    <div key={session.id} className={`session-item ${session.current ? 'current' : ''}`}>
+                      <div className="session-details">
+                        <div className="session-device">{session.device}</div>
+                        <div className="session-meta">
+                          {session.location && (
+                            <span><FaMapMarkerAlt /> {session.location}</span>
+                          )}
+                          {session.lastActive && (
+                            <span><FaCalendarAlt /> {session.lastActive}</span>
+                          )}
+                        </div>
+                      </div>
+                      {session.current ? (
+                        <span className="current-label">Current</span>
+                      ) : (
+                        <button className="revoke-button" type="button" onClick={() => revokeSession(session.id)}>
+                          <FaTrash /> Revoke
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'notifications' && (
+            <div className="settings-section">
+              <h2><FaBell /> Notifications</h2>
+
+              <div className="notification-category">
+                <h3>Email Notifications</h3>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <h4><FaEnvelope /> Announcements</h4>
+                    <p>Be the first to know about placement drives, workshops, and platform updates.</p>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={notificationSettings.email.announcements}
+                      onChange={() => toggleNotificationSetting('email', 'announcements')}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <h4><FaBriefcase /> Application Updates</h4>
+                    <p>Receive status updates whenever a recruiter views or moves your application.</p>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={notificationSettings.email.applicationUpdates}
+                      onChange={() => toggleNotificationSetting('email', 'applicationUpdates')}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <h4><FaEnvelope /> New Messages</h4>
+                    <p>Get an email whenever you receive a new message from recruiters or mentors.</p>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={notificationSettings.email.newMessages}
+                      onChange={() => toggleNotificationSetting('email', 'newMessages')}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="notification-category">
+                <h3>In-app Notifications</h3>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <h4>Enable In-app Alerts</h4>
+                    <p>Show notifications inside the dashboard while you are logged in.</p>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={notificationSettings.inApp.enabled}
+                      onChange={() => toggleNotificationSetting('inApp', 'enabled')}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+                <div className="setting-item">
+                  <div className="setting-info">
+                    <h4>Do Not Disturb</h4>
+                    <p>Silence notifications during specific hours so you can focus on work.</p>
+                    <div className="dnd-settings">
+                      <label className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.inApp.doNotDisturb}
+                          onChange={toggleDoNotDisturb}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                      <div className="dnd-schedule">
+                        <span>From</span>
+                        <input
+                          type="time"
+                          value={notificationSettings.inApp.schedule.start}
+                          onChange={(e) => updateNotificationSchedule('start', e.target.value)}
+                          disabled={!notificationSettings.inApp.doNotDisturb}
+                        />
+                        <span>to</span>
+                        <input
+                          type="time"
+                          value={notificationSettings.inApp.schedule.end}
+                          onChange={(e) => updateNotificationSchedule('end', e.target.value)}
+                          disabled={!notificationSettings.inApp.doNotDisturb}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'privacy' && (
+            <div className="settings-section">
+              <h2><FaShieldAlt /> Privacy &amp; Data</h2>
+
+              <div className="setting-item">
+                <div className="setting-info">
+                  <h3>Profile Visibility</h3>
+                  <p>Control who can see your profile, projects, and achievements.</p>
+                </div>
+                <select
+                  className="dropdown-select"
+                  value={profileVisibility}
+                  onChange={(e) => setProfileVisibility(e.target.value)}
+                >
+                  <option value="public">Public to verified recruiters</option>
+                  <option value="campus">Visible to campus community</option>
+                  <option value="private">Only me</option>
+                </select>
+              </div>
+
+              <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div className="setting-info" style={{ maxWidth: '100%' }}>
+                  <h3><FaDownload /> Download My Data</h3>
+                  <p>Request a copy of everything you have shared on the platform.</p>
+                  <button className="action-button" type="button" onClick={requestDataDownload} disabled={dataRequestStatus === 'pending'}>
+                    <FaDownload /> {dataRequestStatus === 'pending' ? 'Preparing...' : 'Request Export'}
+                  </button>
+                  {dataRequestStatus && (
+                    <div className={`data-request-status ${dataRequestStatus}`}>
+                      {dataRequestStatus === 'pending' ? <span className="spinner"></span> : <FaCheck />}
+                      <span>
+                        {dataRequestStatus === 'pending'
+                          ? 'Your data export is being prepared.'
+                          : 'Your data export is ready. Check your email to download.'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div className="setting-info" style={{ maxWidth: '100%' }}>
+                  <h3><FaTrash /> Delete Account</h3>
+                  <p>Deleting your account is permanent and removes all associated data.</p>
+                  <div>
+                    <button
+                      className={`danger-button ${deleteAccountConfirm ? 'confirm' : ''}`}
+                      type="button"
+                      onClick={confirmDeleteAccount}
+                    >
+                      <FaTrash /> {deleteAccountConfirm ? 'Click again to confirm' : 'Delete Account'}
+                    </button>
+                  </div>
+                  {deleteAccountConfirm && (
+                    <div className="delete-confirmation">
+                      <p>This action cannot be undone. Please contact support if you need assistance restoring access.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'preferences' && (
+            <div className="settings-section">
+              <h2><FaBriefcase /> Job Preferences</h2>
+
+              <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div className="setting-info" style={{ maxWidth: '100%' }}>
+                  <h3>Preferred Roles</h3>
+                  <p>Add the roles you are most interested in. Recruiters use this to tailor recommendations.</p>
+                </div>
+                <div className="tags-input">
+                  {preferredRoles.map(role => (
+                    <span key={role} className="tag">
+                      {role}
+                      <button type="button" className="tag-remove" onClick={() => removePreferredRole(role)} aria-label={`Remove ${role}`}>
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    placeholder="Press Enter to add"
+                    value={newRoleInput}
+                    onChange={(e) => setNewRoleInput(e.target.value)}
+                    onKeyDown={addPreferredRole}
+                  />
+                </div>
+              </div>
+
+              <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div className="setting-info" style={{ maxWidth: '100%' }}>
+                  <h3>Location Preferences</h3>
+                  <p>Choose the work arrangements that match your availability.</p>
+                </div>
+                <div className="preference-option">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={locationPreferences.remote}
+                      onChange={() => toggleLocationPreference('remote')}
+                    />
+                    Remote
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={locationPreferences.hybrid}
+                      onChange={() => toggleLocationPreference('hybrid')}
+                    />
+                    Hybrid
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={locationPreferences.onsite}
+                      onChange={() => toggleLocationPreference('onsite')}
+                    />
+                    Onsite
+                  </label>
+                </div>
+              </div>
+
+              <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div className="setting-info" style={{ maxWidth: '100%' }}>
+                  <h3>Desired Compensation (Lakhs per annum)</h3>
+                  <p>Set your salary expectations to get better job matches.</p>
+                </div>
+                <div className="range-inputs">
+                  <div className="range-input-group">
+                    <label>Min</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="80"
+                      step="1"
+                      value={salaryRange[0]}
+                      onChange={(e) => handleSalaryChange(e, 0)}
+                    />
+                    <span>{salaryRange[0]} LPA</span>
+                  </div>
+                  <div className="range-input-group">
+                    <label>Max</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="80"
+                      step="1"
+                      value={salaryRange[1]}
+                      onChange={(e) => handleSalaryChange(e, 1)}
+                    />
+                    <span>{salaryRange[1]} LPA</span>
+                  </div>
+                  <div className="salary-display">Preferred range: {salaryRange[0]} - {salaryRange[1]} LPA</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'integrations' && (
+            <div className="settings-section">
+              <h2><FaPlug /> Integrations</h2>
+
+              {['github', 'linkedin', 'google'].map((service) => {
+                const config = integrations[service];
+                const labels = {
+                  github: {
+                    title: 'GitHub',
+                    description: 'Sync your projects and showcase recent contributions automatically.',
+                    icon: <FaGithub className="integration-icon" />,
+                    detailLabel: 'Username',
+                    placeholder: 'octocat'
+                  },
+                  linkedin: {
+                    title: 'LinkedIn',
+                    description: 'Import experience highlights and keep your profile in sync.',
+                    icon: <FaLinkedin className="integration-icon" />,
+                    detailLabel: 'Profile URL',
+                    placeholder: 'https://linkedin.com/in/you'
+                  },
+                  google: {
+                    title: 'Google',
+                    description: 'Use your Google account for quick sign-in and calendar syncs.',
+                    icon: <FaGoogle className="integration-icon" />,
+                    detailLabel: 'Email',
+                    placeholder: 'you@gmail.com'
+                  }
+                }[service];
+
+                return (
+                  <div key={service} className="integration-item">
+                    <div className="integration-info">
+                      {labels.icon}
+                      <div>
+                        <h3>{labels.title}</h3>
+                        <p>{labels.description}</p>
+                        {config.connected && (
+                          <div className="integration-detail">
+                            <span>{labels.detailLabel}:</span>
+                            <input
+                              type="text"
+                              value={config.username || config.url || config.email || ''}
+                              placeholder={labels.placeholder}
+                              onChange={(e) => updateIntegrationDetail(service, labels.detailLabel.toLowerCase().includes('url') ? 'url' : labels.detailLabel.toLowerCase(), e.target.value)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="integration-actions">
+                      {config.connected ? (
+                        <>
+                          <button className="connected-button" type="button">
+                            <FaCheck /> Connected
+                          </button>
+                          <button className="disconnect-button" type="button" onClick={() => toggleIntegration(service)}>
+                            Disconnect
+                          </button>
+                        </>
+                      ) : (
+                        <button className="connect-button" type="button" onClick={() => toggleIntegration(service)}>
+                          Connect
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {activeTab === 'help' && (
+            <div className="settings-section">
+              <h2><FaQuestionCircle /> Help &amp; Support</h2>
+
+              <div className="help-item">
+                <h3>Need a walkthrough?</h3>
+                <p>Explore the student handbook to learn how to complete your profile, track applications, and use the ATS effectively.</p>
+                <button className="action-button" type="button" onClick={() => navigate('/roadmaps')}>
+                  <FaLightbulb /> Open Handbook
+                </button>
+              </div>
+
+              <div className="help-item">
+                <h3>Having trouble with notifications?</h3>
+                <p>Check the notifications tab for per-channel controls or reach out if alerts still do not appear.</p>
+                <button className="action-button" type="button" onClick={() => navigate('/notifications')}>
+                  <FaBell /> Open Notifications
+                </button>
+              </div>
+
+              <div className="help-item">
+                <h3>Prefer email?</h3>
+                <p>Send us a message at support@campusplacements.io and our team will respond within one business day.</p>
+                <a className="action-button" href="mailto:support@campusplacements.io">
+                  <FaEnvelope /> Email Support
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
