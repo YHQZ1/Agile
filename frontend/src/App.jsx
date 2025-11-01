@@ -5,6 +5,9 @@ import { ThemeProvider } from './context/ThemeContext';
 // Public Pages
 import LandingPage from './pages/LandingPage';
 import Auth from './pages/Auth';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Careers from './pages/Careers';
 
 // Student Pages
 import Default from "./pages/Student/Default";
@@ -41,6 +44,9 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<Auth />} />
+            <Route path="/About" element={<About />} />
+            <Route path="/Contact" element={<Contact />} />
+            <Route path="/Careers" element={<Careers />} />
 
           {/* Student Routes */}
           <Route path="/student-form" element={<StudentDetailsForm />} />

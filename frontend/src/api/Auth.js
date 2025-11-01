@@ -5,19 +5,34 @@ export const TEST_PASSWORD = "TestPassword123!";
 
 const BASE_URL = BACKEND_URL;
 
-export const login = async ({ email, password }) => {
+export const login = async ({ email, password, remember = false }) => {
   const response = await fetch(`${BASE_URL}/api/auth/login`, {
     method: "POST",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, remember }),
   });
 
   const data = await response.json();
   if (!response.ok) {
     const message = data?.message || "Unable to login";
+    throw new Error(message);
+  }
+  return data;
+};
+export const forgotPassword = async (email) => {
+  const response = await fetch(`${BASE_URL}/api/auth/forgot-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    const message = data?.message || "Unable to send reset instructions";
     throw new Error(message);
   }
   return data;

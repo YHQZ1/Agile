@@ -291,17 +291,20 @@ const Default = () => {
             {
               text: "The placement portal made it so easy to apply to multiple companies and track my applications. I landed my dream job within weeks!",
               name: "Rahul Sharma",
-              role: "Placed at Microsoft"
+              role: "Placed at Microsoft",
+              image: "/images/rahulsharma.jpg"
             },
             {
               text: "As a recruiter, this platform has streamlined our campus hiring process significantly. The student profiles are comprehensive and easy to evaluate.",
               name: "Priya Patel",
-              role: "HR Manager, Amazon"
+              role: "HR Manager, Amazon",
+              image: "/images/priyapatel.jpeg"
             },
             {
               text: "The resume builder helped me create a professional CV that got me noticed by top companies. I received 5 interview calls within a week!",
               name: "Anjali Mehta",
-              role: "Placed at Google"
+              role: "Placed at Google",
+              image: "/images/anjalimehta.jpeg"
             }
           ].map((testimonial, index) => (
             <div 
@@ -311,7 +314,16 @@ const Default = () => {
               <div className="dp-testimonial-content">
                 <p className="dp-testimonial-text">"{testimonial.text}"</p>
                 <div className="dp-testimonial-author">
-                  <div className="dp-author-avatar"></div>
+                  <div className="dp-author-avatar">
+                    <img 
+                      src={testimonial.image} 
+                      alt={testimonial.name}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.style.background = 'var(--primary-light)';
+                      }}
+                    />
+                  </div>
                   <div className="dp-author-info">
                     <h4 className="dp-author-name">{testimonial.name}</h4>
                     <p className="dp-author-role">{testimonial.role}</p>
@@ -322,6 +334,7 @@ const Default = () => {
           ))}
         </div>
       </section>
+
     </div>
   );
 };

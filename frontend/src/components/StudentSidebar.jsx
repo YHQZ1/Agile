@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { 
+import {
   FaThLarge,
   FaMapSigns,
   FaTasks,
@@ -14,24 +14,14 @@ import {
   FaLaptop,
   FaFileAlt,
   FaUsers,
-  FaMicrophone,
+  FaArchive,
   FaBars,
   FaTimes,
-  FaQuestionCircle,
-  FaHistory,
-  FaFire,
-  FaBriefcase,
-  FaCode,
-  FaUniversity,
-  FaClipboardList,
-  FaArchive,
-  FaRedo,
-  FaSyncAlt
 } from "react-icons/fa";
-import { NavLink } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
 import { ThemeContext } from "../context/ThemeContext";
 import "../styles/Student/StudentSidebar.css";
-import { LogOut } from "lucide-react";
 
 const StudentSidebar = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -40,52 +30,57 @@ const StudentSidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarRef = useRef(null);
   const toggleRef = useRef(null);
+  const navigate = useNavigate();
 
-  // Helper function to determine if a route is active
-  const isActiveRoute = ({ isActive }) => isActive ? "active" : "";
+  const menuItems = [
+    { path: "/student-dashboard", label: "Dashboard", icon: <FaThLarge /> },
+    { path: "/roadmaps", label: "Roadmaps", icon: <FaMapSigns /> },
+    { path: "/ongoing-drives", label: "Ongoing Drives", icon: <FaTasks /> },
+    { path: "/upcoming-drives", label: "Upcoming Drives", icon: <FaCalendarCheck /> },
+    { path: "/participated-drives", label: "Participated Drives", icon: <FaClipboardCheck /> },
+    { path: "/companies", label: "Companies", icon: <FaBuilding /> },
+    { path: "/projects", label: "Projects", icon: <FaLaptop /> },
+    { path: "/forum", label: "Discussion Forum", icon: <FaUsers /> },
+    { path: "/ats-checker", label: "ATS Checker", icon: <FaFileAlt /> },
+    { path: "/interview-archives", label: "Interview Archives", icon: <FaArchive /> },
+    { path: "/student-perks", label: "Student Perks", icon: <FaGift /> },
+    { path: "/notifications", label: "Notifications", icon: <FaBell /> },
+    { path: "/settings", label: "Settings", icon: <FaCog /> },
+    { path: "/", label: "Logout", icon: <LogOut />, action: "logout" },
+  ];
 
-  // Toggle sidebar visibility on mobile
-  const toggleSidebar = () => {
-    setSidebarOpen(prevState => !prevState);
-  };
+  // Filtered menu list based on search input
+  const filteredItems = menuItems.filter((item) =>
+    item.label.toLowerCase().includes(searchValue.toLowerCase())
+  );
 
-  // Close sidebar
-  const closeSidebar = () => {
-    setSidebarOpen(false);
-  };
+  const isActiveRoute = ({ isActive }) => (isActive ? "active" : "");
 
-  // Effect to handle window resize
+  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
+
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    // Set initial state
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     handleResize();
-
-    // Add event listener
-    window.addEventListener('resize', handleResize);
-    
-    // Clean up
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Handle clicks outside the sidebar to close it
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isMobile && sidebarOpen && 
-          sidebarRef.current && 
-          !sidebarRef.current.contains(event.target) &&
-          toggleRef.current && 
-          !toggleRef.current.contains(event.target)) {
+      if (
+        isMobile &&
+        sidebarOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target) &&
+        toggleRef.current &&
+        !toggleRef.current.contains(event.target)
+      ) {
         setSidebarOpen(false);
       }
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobile, sidebarOpen]);
 
   const handleLogout = () => {
@@ -93,16 +88,16 @@ const StudentSidebar = () => {
     navigate("/");
   };
 
-  const handleLogoutFunctionality = () => {
-    handleLogout();
+  const handleItemClick = (item) => {
+    if (item.action === "logout") handleLogout();
     closeSidebar();
-  }
+  };
 
   return (
     <>
-      {/* Mobile toggle button - always visible on mobile */}
+      {/* Mobile toggle button */}
       {isMobile && (
-        <button 
+        <button
           ref={toggleRef}
           className={`mobile-toggle ${darkMode ? "dark" : ""}`}
           onClick={toggleSidebar}
@@ -111,11 +106,13 @@ const StudentSidebar = () => {
           {sidebarOpen ? <FaTimes className="icon" /> : <FaBars className="icon" />}
         </button>
       )}
-      
-      {/* Sidebar - always visible on desktop, conditionally visible on mobile */}
-      <div 
+
+      {/* Sidebar */}
+      <div
         ref={sidebarRef}
-        className={`sidebar ${darkMode ? "dark" : ""} ${isMobile ? "mobile" : ""} ${sidebarOpen ? "open" : ""}`}
+        className={`sidebar ${darkMode ? "dark" : ""} ${isMobile ? "mobile" : ""} ${
+          sidebarOpen ? "open" : ""
+        }`}
       >
         <div className="sidebar-header">
           {!isMobile ? (
@@ -129,12 +126,12 @@ const StudentSidebar = () => {
             </>
           )}
         </div>
-        
+
         {!isMobile && (
           <div className="search-container">
-            <input 
-              type="text" 
-              className="search-input" 
+            <input
+              type="text"
+              className="search-input"
               placeholder="Search..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
@@ -144,113 +141,46 @@ const StudentSidebar = () => {
 
         <nav className="main-menu">
           <ul>
-            <li>
-              <NavLink to="/student-dashboard" className={isActiveRoute} title="Dashboard" onClick={closeSidebar}>
-                <FaThLarge className="icon" /> 
-                <span className="menu-text">Dashboard</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/roadmaps" className={isActiveRoute} title="Roadmaps" onClick={closeSidebar}>
-                <FaMapSigns className="icon" /> 
-                <span className="menu-text">Roadmaps</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/ongoing-drives" className={isActiveRoute} title="Ongoing Drives" onClick={closeSidebar}>
-                <FaTasks className="icon" /> 
-                <span className="menu-text">Ongoing Drives</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/upcoming-drives" className={isActiveRoute} title="Upcoming Drives" onClick={closeSidebar}>
-                <FaCalendarCheck className="icon" /> 
-                <span className="menu-text">Upcoming Drives</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/participated-drives" className={isActiveRoute} title="Participated Drives" onClick={closeSidebar}>
-                <FaClipboardCheck className="icon" /> 
-                <span className="menu-text">Participated Drives</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/companies" className={isActiveRoute} title="Companies" onClick={closeSidebar}>
-                <FaBuilding className="icon" /> 
-                <span className="menu-text">Companies</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/projects" className={isActiveRoute} title="Projects" onClick={closeSidebar}>
-                <FaLaptop className="icon" /> 
-                <span className="menu-text">Projects</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/forum" className={isActiveRoute} title="Discussion Forum" onClick={closeSidebar}>
-                <FaUsers className="icon" /> 
-                <span className="menu-text">Discussion Forum</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/ats-checker" className={isActiveRoute} title="ATS Checker" onClick={closeSidebar}>
-                <FaFileAlt className="icon" /> 
-                <span className="menu-text">ATS Checker</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/interview-archives" className={isActiveRoute} title="Interview Archives" onClick={closeSidebar}>
-                <FaArchive className="icon" /> 
-                <span className="menu-text">Interview Archives</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/student-perks" className={isActiveRoute} title="Student Perks" onClick={closeSidebar}>
-                <FaGift className="icon" /> 
-                <span className="menu-text">Student Perks</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/notifications" className={isActiveRoute} title="Notifications" onClick={closeSidebar}>
-                <FaBell className="icon" /> 
-                <span className="menu-text">Notifications</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/settings" className={isActiveRoute} title="Settings" onClick={closeSidebar}>
-                <FaCog className="icon" /> 
-                <span className="menu-text">Settings</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/" className={isActiveRoute} title="Settings" onClick={handleLogoutFunctionality}>
-                <LogOut className="icon" /> 
-                <span className="menu-text">Logout</span>
-              </NavLink>
-            </li>
+            {filteredItems.length > 0 ? (
+              filteredItems.map((item, index) => (
+                <li key={index}>
+                  <NavLink
+                    to={item.path}
+                    className={isActiveRoute}
+                    onClick={() => handleItemClick(item)}
+                    title={item.label}
+                  >
+                    <span className="icon">{item.icon}</span>
+                    <span className="menu-text">{item.label}</span>
+                  </NavLink>
+                </li>
+              ))
+            ) : (
+              <li className="no-results">No results found</li>
+            )}
           </ul>
         </nav>
 
         <div className="divider"></div>
-        
+
         <div className="theme-toggle-container">
-          <button className="theme-toggle" onClick={toggleDarkMode} title={darkMode ? "Light Mode" : "Dark Mode"}>
-            {darkMode ? (
-              <>
-                <FaSun className="icon" /> 
-                <span>Light Mode</span>
-              </>
-            ) : (
-              <>
-                <FaMoon className="icon" /> 
-                <span>Dark Mode</span>
-              </>
-            )}
-          </button>
+          <div className="theme-toggle">
+            <div className="theme-label">
+              {darkMode ? <FaSun className="icon" /> : <FaMoon className="icon" />}
+              <span>{darkMode ? "Light Mode" : "Dark Mode"}</span>
+            </div>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={darkMode}
+                onChange={toggleDarkMode}
+              />
+              <span className="slider round"></span>
+            </label>
+          </div>
         </div>
       </div>
-      
-      {/* Overlay for mobile when sidebar is open */}
+
       {isMobile && sidebarOpen && (
         <div className="sidebar-overlay" onClick={closeSidebar}></div>
       )}
